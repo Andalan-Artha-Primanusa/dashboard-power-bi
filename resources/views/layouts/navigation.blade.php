@@ -16,12 +16,15 @@
 
   {{-- NAV --}}
   <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-2">
+
+    {{-- ========== GENERAL ========== --}}
     <a href="{{ route('dashboard') }}"
        class="flex items-center gap-2 px-3 py-2 rounded-md transition
               {{ request()->routeIs('dashboard') ? 'bg-gold-500 text-maroon-900 font-semibold' : 'hover:bg-maroon-600 text-white' }}">
       📊 Dashboard
     </a>
 
+    {{-- Power BI (VIEW-ONLY) untuk semua user yang login --}}
     <a href="{{ route('powerbi.index') }}"
        class="flex items-center gap-2 px-3 py-2 rounded-md transition
               {{ request()->routeIs('powerbi.*') ? 'bg-gold-500 text-maroon-900 font-semibold' : 'hover:bg-maroon-600 text-white' }}">
@@ -30,8 +33,25 @@
 
     @php($u = Auth::user())
 
-    {{-- Users (GM & Super Admin) : pakai Gate atau fallback cek role --}}
+    {{-- ========== ADMIN SECTION (GM & SUPER ADMIN) ========== --}}
     @if($u && ($u->can('manage-users') || in_array($u->role ?? 'user', ['gm','super_admin'], true)))
+      <div class="mt-4 px-3 text-xs uppercase tracking-wide text-gold-300/80">Admin</div>
+
+      {{-- Power BI Admin --}}
+      <a href="{{ route('admin.powerbi.index') }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-md transition
+                {{ request()->routeIs('admin.powerbi.*') ? 'bg-gold-500 text-maroon-900 font-semibold' : 'hover:bg-maroon-600 text-white' }}">
+        🧰 Power BI Admin
+      </a>
+
+      {{-- Divisions --}}
+      <a href="{{ route('admin.divisions.index') }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-md transition
+                {{ request()->routeIs('admin.divisions.*') ? 'bg-gold-500 text-maroon-900 font-semibold' : 'hover:bg-maroon-600 text-white' }}">
+        🏢 Divisions
+      </a>
+
+      {{-- Users --}}
       <a href="{{ route('admin.users.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-md transition
                 {{ request()->routeIs('admin.users.*') ? 'bg-gold-500 text-maroon-900 font-semibold' : 'hover:bg-maroon-600 text-white' }}">
@@ -39,8 +59,9 @@
       </a>
     @endif
 
-    {{-- Audit (Super Admin only) : pakai Gate atau fallback cek role --}}
+    {{-- ========== AUDIT (SUPER ADMIN ONLY) ========== --}}
     @if($u && ($u->can('view-audit') || ($u->role ?? 'user') === 'super_admin'))
+      <div class="mt-4 px-3 text-xs uppercase tracking-wide text-gold-300/80">Security</div>
       <a href="{{ route('admin.audit.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-md transition
                 {{ request()->routeIs('admin.audit.*') ? 'bg-gold-500 text-maroon-900 font-semibold' : 'hover:bg-maroon-600 text-white' }}">
@@ -71,7 +92,7 @@
           <form method="POST" action="{{ route('logout') }}">
             @csrf
             <x-dropdown-link :href="route('logout')"
-                onclick="event.preventDefault(); this.closest('form').submit();">
+              onclick="event.preventDefault(); this.closest('form').submit();">
               {{ __('Log Out') }}
             </x-dropdown-link>
           </form>

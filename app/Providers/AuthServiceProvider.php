@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\PowerBiReport;
+use App\Models\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
-use App\Models\User;
-use App\Models\PowerBiReport;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -25,45 +25,29 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        /**
-         * Super Admin override:
-         * Jika user.role === 'super_admin', maka semua ability akan auto-true.
-         */
+        // === Super Admin override: semua ability auto-true ===
         Gate::before(function ($user, $ability) {
-            return ($user->role ?? 'user') === 'super_admin' ? true : null;
+            return (($user->role ?? 'user') === 'super_admin') ? true : null;
         });
 
-        /**
-         * Gate: view-powerbi
-         * User bisa lihat report kalau dia punya akses langsung (pivot user-report)
-         * atau lewat division.
-         */
+        // === Lihat report Power BI (per user/divisi) ===
         Gate::define('view-powerbi', function (User $user, PowerBiReport $report) {
             return PowerBiReport::visibleTo($user)->whereKey($report->id)->exists();
         });
 
-        /**
-         * Gate: manage-powerbi
-         * GM & Super Admin boleh CRUD Power BI report.
-         */
+        // === Kelola Power BI (GM & Super Admin) ===
         Gate::define('manage-powerbi', function (User $user) {
-            return in_array($user->role, ['gm', 'super_admin']);
+            return in_array($user->role ?? 'user', ['gm', 'super_admin'], true);
         });
 
-        /**
-         * Gate: manage-users
-         * GM & Super Admin boleh kelola user (ganti division, reset password).
-         */
+        // === Kelola User (GM & Super Admin) ===
         Gate::define('manage-users', function (User $user) {
-            return in_array($user->role, ['gm', 'super_admin']);
+            return in_array($user->role ?? 'user', ['gm', 'super_admin'], true);
         });
 
-        /**
-         * Gate: view-audit
-         * Hanya Super Admin (atau override) yang boleh lihat audit log.
-         */
+        // === Lihat Audit (Super Admin only) ===
         Gate::define('view-audit', function (User $user) {
-            return $user->role === 'super_admin';
+            return ($user->role ?? 'user') === 'super_admin';
         });
     }
 }
