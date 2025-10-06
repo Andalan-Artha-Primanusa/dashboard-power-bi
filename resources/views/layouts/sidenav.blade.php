@@ -1,4 +1,3 @@
-{{-- resources/views/layouts/sidenav.blade.php --}}
 <aside class="w-72 bg-maroon-800 text-white flex flex-col h-screen">
   @php
     use Illuminate\Support\Str;
@@ -7,7 +6,7 @@
 
     $u = Auth::user();
 
-    // ===== Role label & privilege =====
+    // Role & label
     $rawRole = $u->role->key ?? $u->role->slug ?? $u->role->name ?? (is_string($u->role ?? null) ? $u->role : '') ?? '';
     $norm    = Str::of($rawRole)->lower()->replace(['_', '-'], ' ')->squish()->toString();
     $map     = ['gm'=>'gm','general manager'=>'gm','generalmanager'=>'gm','manager'=>'manager','mgr'=>'manager'];
@@ -16,35 +15,35 @@
     $isGM         = $roleKey === 'gm' || ($u->role ?? '') === 'gm';
     $displayRole  = $isSuperAdmin ? 'Super Admin' : (Str::title($roleKey ?: 'User'));
 
-    // ===== User info =====
+    // User info
     $name  = $u->name ?? 'User';
     $email = $u->email ?? '';
     $photo = property_exists($u,'profile_photo_url') && $u->profile_photo_url ? $u->profile_photo_url : null;
     $initials = collect(preg_split('/\s+/', trim($name)))->filter()->map(fn($p)=>Str::upper(Str::substr($p,0,1)))->take(2)->implode('') ?: 'U';
 
-    // ===== Site aktif & izin ganti =====
+    // Site aktif & izin ganti
     $activeSiteId = session('site_id') ?? ($u->default_site_id ?? null);
     $activeSite   = $activeSiteId ? Site::find($activeSiteId) : null;
     $siteLabel    = $activeSite ? (($activeSite->code ?? 'SITE') . ' — ' . ($activeSite->name ?? '')) : 'Belum memilih site';
 
-    // Sites diizinkan (multi-site relasi optional)
     $allowedSiteIds = [];
     if (method_exists($u, 'sites')) {
       try { $allowedSiteIds = $u->sites()->pluck('sites.id')->all(); } catch (\Throwable $e) { $allowedSiteIds = []; }
     }
     if (empty($allowedSiteIds) && !empty($u->default_site_id)) $allowedSiteIds = [$u->default_site_id];
-    $allowedCount  = count(array_unique(array_filter($allowedSiteIds)));
-    $canSwitchSite = $isSuperAdmin || $isGM || ($allowedCount > 1);
+    $canSwitchSite = $isSuperAdmin || $isGM || (count(array_unique(array_filter($allowedSiteIds))) > 1);
+
+    $isMobile = ($mobile ?? false) === true;
   @endphp
 
   {{-- HEADER --}}
-  <div class="flex items-center justify-between h-16 px-4 border-b border-maroon-700 bg-maroon-900/90 backdrop-blur">
+  <div class="flex items-center justify-between h-16 px-4 border-b border-maroon-700 bg-maroon-900/90">
     <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
       <x-application-logo class="h-8 w-auto text-gold-500" />
       <span class="font-bold text-lg text-gold-400">BISA ERP</span>
     </a>
-    @if(($mobile ?? false) === true)
-      <button @click="$root.sidebarOpen=false" class="p-2 rounded text-gold-300 hover:text-gold-100 lg:hidden" aria-label="Close sidebar">
+    @if($isMobile)
+      <button @click="$root.sidebarOpen=false" class="p-2 rounded text-gold-300 hover:text-gold-100" aria-label="Close sidebar">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
@@ -65,7 +64,7 @@
         @endif
         <div class="min-w-0">
           <div class="text-base font-extrabold text-gold-100 leading-tight truncate">{{ $name }}</div>
-          <div class="mt-0.5 flex items-center gap-2">
+          <div class="mt-0.5">
             <span class="text-[10px] px-2 py-0.5 rounded-full bg-gold-500 text-maroon-900 font-black tracking-wide">
               {{ $displayRole }}
             </span>
@@ -129,19 +128,16 @@
 
     @if($u && in_array($u->role ?? 'user',['gm','super_admin'],true))
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-gold-300/80">Admin</div>
-
       <a href="{{ route('admin.powerbi.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
                 {{ request()->routeIs('admin.powerbi.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         🧰 Power BI Admin
       </a>
-
       <a href="{{ route('admin.divisions.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
                 {{ request()->routeIs('admin.divisions.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         🏢 Divisions
       </a>
-
       <a href="{{ route('admin.users.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
                 {{ request()->routeIs('admin.users.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">

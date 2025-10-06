@@ -42,14 +42,14 @@ class PowerBiReport extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'powerbi_report_user', 'report_id', 'user_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /** Divisi yang punya akses (pivot powerbi_report_division) */
     public function divisions(): BelongsToMany
     {
         return $this->belongsToMany(Division::class, 'powerbi_report_division', 'report_id', 'division_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /** Siapa yang membuat entri report ini */
@@ -129,5 +129,11 @@ class PowerBiReport extends Model
                 $m->created_by = auth()->id();
             }
         });
+    }
+
+    public function sites()
+    {
+        return $this->belongsToMany(Site::class, 'powerbi_report_site', 'report_id', 'site_id')
+            ->withTimestamps();
     }
 }
