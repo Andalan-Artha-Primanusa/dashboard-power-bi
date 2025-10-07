@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login — BISA ERP</title>
+  <title>Login — ARCA</title>
   @vite('resources/css/app.css')
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -146,7 +146,7 @@
       <div class="absolute bottom-12 left-12 right-12 text-white">
         <div class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 ring-1 ring-white/20 backdrop-blur">
           <span class="h-2 w-2 rounded-full bg-amber-400"></span>
-          <span class="text-xs">BISA ERP — Secure Access</span>
+          <span class="text-xs">ARCA — Secure Access</span>
         </div>
         <h3 class="mt-4 text-3xl font-extrabold drop-shadow">Satu pintu data operasional & keuangan.</h3>
         <p class="mt-2 text-sm text-white/80">Akses dashboard, input harian, dan analitik produksi dalam ekosistem terpadu.</p>
