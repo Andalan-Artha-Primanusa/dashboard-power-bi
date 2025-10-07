@@ -7,7 +7,7 @@ use App\Http\Controllers\ProfileController;
 
 // ====== Power BI (User-facing) ======
 use App\Http\Controllers\PowerBiController;
-
+use App\Http\Controllers\DashboardController;
 // ====== Admin Controllers ======
 use App\Http\Controllers\Admin\PowerBiAdminController;
 use App\Http\Controllers\Admin\UserAdminController;
@@ -43,10 +43,9 @@ Route::get('/', function () {
 | Dashboard (Breeze)
 |--------------------------------------------------------------------------
 */
-Route::get('/dashboard', fn() => view('dashboard'))
-    ->middleware(['auth', 'verified'])
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth','verified'])
     ->name('dashboard');
-
 /*
 |--------------------------------------------------------------------------
 | Protected area (Auth)

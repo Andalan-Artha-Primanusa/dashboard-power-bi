@@ -1,5 +1,7 @@
 <!doctype html>
-<html lang="{{ str_replace('_','-', app()->getLocale()) }}" x-data="{ sidebarOpen:false }" :class="sidebarOpen ? 'overflow-hidden' : ''">
+<html lang="{{ str_replace('_','-', app()->getLocale()) }}" 
+      x-data="{ sidebarOpen:false }" 
+      :class="sidebarOpen ? 'overflow-hidden' : ''">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,11 +34,13 @@
     </div>
   </div>
 
-  <div class="min-h-screen flex">
+  {{-- Wrapper utama full tinggi layar --}}
+  <div class="h-screen flex overflow-hidden">
 
     {{-- Sidebar (desktop) --}}
-    <div class="hidden lg:block">
-      @include('layouts.sidenav') {{-- <- penting: pakai file sidenav yang baru --}}
+    <div class="hidden lg:flex lg:h-full">
+      {{-- Pastikan di sidenav pakai <aside class="w-72 h-full flex flex-col ..."> --}}
+      @include('layouts.sidenav')
     </div>
 
     {{-- Sidebar (mobile slide-over) --}}
@@ -52,7 +56,7 @@
     </div>
 
     {{-- MAIN CONTENT --}}
-    <div class="flex-1 min-w-0 flex flex-col">
+    <div class="flex-1 min-w-0 min-h-0 flex flex-col">
 
       {{-- Header via @section("header") --}}
       @hasSection('header')
@@ -70,7 +74,8 @@
         </div>
       @endif
 
-      <main class="flex-1 w-full px-4 py-8 lg:px-8 mx-0 max-w-none">
+      {{-- Konten dengan scroll --}}
+      <main class="flex-1 w-full px-4 py-8 lg:px-8 mx-0 max-w-none overflow-y-auto">
         {{-- Flash & errors --}}
         @if (session('status'))
           <div class="mb-4 p-3 rounded-lg bg-green-50 text-emerald-700 border border-green-200">
