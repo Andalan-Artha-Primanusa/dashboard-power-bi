@@ -14,25 +14,29 @@ use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        // api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        // api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         /**
-         * Alias middleware kustom.
-         * Bisa dipakai di routes: ->middleware('role:gm,super_admin') dan ->middleware('verified')
+         * ====== Middleware Aliases ======
+         * Pakai di routes:
+         *   ->middleware('role:gm|super_admin')  // atau 'role:gm,super_admin'
+         *   ->middleware('verified')
          */
         $middleware->alias([
             'role'     => \App\Http\Middleware\EnsureUserHasRole::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-            // 'can' sudah tersedia default oleh Laravel (Authorize)
+            // 'can' bawaan Laravel; tak perlu alias
         ]);
 
-        // Tambahan contoh (opsional):
-        // $middleware->appendToGroup('web', \App\Http\Middleware\YourExtraWebMiddleware::class);
-        // $middleware->append(\App\Http\Middleware\ForceJsonResponse::class); // HATI-HATI global
+        // Contoh menambahkan middleware ke group (opsional):
+        // $middleware->appendToGroup('web', \App\Http\Middleware\SomeWebMiddleware::class);
+
+        // Hati-hati menambahkan global middleware:
+        // $middleware->append(\App\Http\Middleware\ForceJsonResponse::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 
@@ -41,12 +45,17 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
-            // Redirect ke login; fallback /login kalau named route tidak ada
-            $loginUrl = route('login', absolute: false) ?? '/login';
+
+            // Redirect ke login; fallback ke /login jika route name 'login' tidak tersedia
+            try {
+                $loginUrl = route('login', absolute: false);
+            } catch (\Throwable $t) {
+                $loginUrl = '/login';
+            }
             return redirect()->guest($loginUrl);
         });
 
-        // 403 Unauthorized (Gate / Policy)
+        // 403 Unauthorized (Gate/Policy)
         $exceptions->render(function (AuthorizationException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'This action is unauthorized.'], 403);
@@ -96,7 +105,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'errors'  => $e->errors(),
                 ], 422);
             }
-            // Untuk request web biasa, Laravel akan redirect back dengan errors.
+            // Untuk request web biasa, Laravel akan redirect back dengan errors otomatis.
         });
 
         // 429 Rate limit

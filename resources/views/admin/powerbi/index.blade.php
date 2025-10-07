@@ -11,7 +11,7 @@
 
 <div class="rounded-3xl shadow ring-1 ring-slate-200 bg-white overflow-hidden">
 
-  {{-- HEADER STRIP (sama kayak Division) --}}
+  {{-- HEADER STRIP --}}
   <div class="px-6 py-6 bg-gradient-to-r from-maroon-700 via-maroon-600 to-yellow-600">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div class="text-white">
@@ -19,8 +19,7 @@
         <p class="text-sm text-white/85 mt-1">Kelola daftar report Power BI dan akses embed-nya.</p>
       </div>
       <a href="{{ route('admin.powerbi.create') }}"
-         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow
-                bg-gold-500 text-maroon-900">
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow bg-gold-500 text-maroon-900">
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
         Tambah Report
       </a>
@@ -64,6 +63,7 @@
         <tr>
           <th class="px-4 py-3 text-left">Name</th>
           <th class="px-4 py-3 text-left">Embed URL</th>
+          <th class="px-4 py-3 text-left">Grants</th> {{-- NEW --}}
           <th class="px-4 py-3 text-left">Created By</th>
           <th class="px-4 py-3 text-left">Status</th>
           <th class="px-4 py-3 text-right">Action</th>
@@ -71,7 +71,14 @@
       </thead>
       <tbody class="divide-y divide-slate-200">
         @forelse($reports as $report)
-          @php $isDeleted = method_exists($report,'trashed') ? $report->trashed() : false; @endphp
+          @php
+            $isDeleted = method_exists($report,'trashed') ? $report->trashed() : false;
+            // counts
+            $uCount = $report->relationLoaded('users') ? $report->users->count() : $report->users()->count();
+            $dCount = $report->relationLoaded('divisions') ? $report->divisions->count() : $report->divisions()->count();
+            $sCount = $report->relationLoaded('sites') ? $report->sites->count() : $report->sites()->count();
+            $isGlobal = ($uCount + $dCount + $sCount) === 0;
+          @endphp
           <tr class="hover:bg-slate-50">
             <td class="px-4 py-3 align-top">
               <div class="font-medium text-slate-800">{{ $report->name }}</div>
@@ -83,6 +90,36 @@
               <a href="{{ $report->embed_url }}" target="_blank"
                  class="text-blue-600 hover:underline break-all line-clamp-1">Open</a>
             </td>
+
+            {{-- NEW: Grants column --}}
+            <td class="px-4 py-3 align-top">
+              <div class="flex flex-wrap gap-2">
+                @if($uCount>0)
+                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200"
+                        title="@if($report->relationLoaded('users')){{ $report->users->pluck('name')->join(', ') }}@endif">
+                    👤 Users: {{ $uCount }}
+                  </span>
+                @endif
+                @if($dCount>0)
+                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800 ring-1 ring-amber-200"
+                        title="@if($report->relationLoaded('divisions')){{ $report->divisions->pluck('name')->join(', ') }}@endif">
+                    🏢 Divs: {{ $dCount }}
+                  </span>
+                @endif
+                @if($sCount>0)
+                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
+                        title="@if($report->relationLoaded('sites')){{ $report->sites->map(fn($s)=>($s->code ?? '—').($s->name?(' - '.$s->name):''))->join(', ') }}@endif">
+                    📍 Sites: {{ $sCount }}
+                  </span>
+                @endif
+                @if($isGlobal)
+                  <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200" title="Tanpa grant: visible global">
+                    🌐 Global
+                  </span>
+                @endif
+              </div>
+            </td>
+
             <td class="px-4 py-3 align-top">
               <div class="flex items-center gap-2">
                 <div class="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
@@ -91,17 +128,15 @@
                 <span class="text-slate-700">{{ $report->creator?->name ?? '-' }}</span>
               </div>
             </td>
+
             <td class="px-4 py-3 align-top">
               @if($isDeleted)
-                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 ring-1 ring-red-200">
-                  Deleted
-                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 ring-1 ring-red-200">Deleted</span>
               @else
-                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200">
-                  Active
-                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200">Active</span>
               @endif
             </td>
+
             <td class="px-4 py-3 align-top text-right">
               {{-- Action dropdown --}}
               <div x-data="{open:false}" class="relative inline-block text-left">
@@ -130,7 +165,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="5" class="px-4 py-16">
+            <td colspan="6" class="px-4 py-16">
               <div class="mx-auto max-w-md text-center">
                 <div class="mx-auto h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center">
                   <svg class="h-6 w-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
@@ -156,7 +191,13 @@
   {{-- MOBILE CARDS --}}
   <div class="md:hidden divide-y bg-white">
     @forelse($reports as $report)
-      @php $isDeleted = method_exists($report,'trashed') ? $report->trashed() : false; @endphp
+      @php
+        $isDeleted = method_exists($report,'trashed') ? $report->trashed() : false;
+        $uCount = $report->relationLoaded('users') ? $report->users->count() : $report->users()->count();
+        $dCount = $report->relationLoaded('divisions') ? $report->divisions->count() : $report->divisions()->count();
+        $sCount = $report->relationLoaded('sites') ? $report->sites->count() : $report->sites()->count();
+        $isGlobal = ($uCount + $dCount + $sCount) === 0;
+      @endphp
       <div class="p-4">
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
@@ -164,7 +205,24 @@
             @if($report->description)
               <div class="text-xs text-slate-500 line-clamp-2">{{ $report->description }}</div>
             @endif
-            <a href="{{ $report->embed_url }}" target="_blank" class="text-xs text-blue-600 hover:underline break-all">Open</a>
+
+            <div class="mt-1 flex flex-wrap gap-1.5">
+              @if($uCount>0)
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">👤 {{ $uCount }}</span>
+              @endif
+              @if($dCount>0)
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-amber-100 text-amber-800 ring-1 ring-amber-200">🏢 {{ $dCount }}</span>
+              @endif
+              @if($sCount>0)
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200">📍 {{ $sCount }}</span>
+              @endif
+              @if($isGlobal)
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">🌐 Global</span>
+              @endif
+            </div>
+
+            <a href="{{ $report->embed_url }}" target="_blank" class="mt-1 block text-xs text-blue-600 hover:underline break-all">Open</a>
+
             <div class="mt-1">
               @if($isDeleted)
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-red-100 text-red-700 ring-1 ring-red-200">Deleted</span>
@@ -173,6 +231,7 @@
               @endif
             </div>
           </div>
+
           {{-- kebab menu --}}
           <div x-data="{open:false}" class="relative">
             <button @click="open=!open" class="p-2 rounded-lg bg-slate-100 text-slate-700">⋯</button>

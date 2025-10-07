@@ -5,32 +5,32 @@ use App\Http\Controllers\Controller;
 use App\Models\PowerBiReport;
 use App\Models\User;
 use App\Models\Division;
+use App\Models\Site; // <— TAMBAHKAN
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class PowerBiAdminController extends Controller
 {
-      public function __construct()
+    public function __construct()
     {
-        // Batasi ke GM & Super Admin sesuai alias middleware yang sudah kamu buat
         $this->middleware(['auth', 'role:gm,super_admin']);
     }
 
     public function index(Request $r)
     {
-        $reports = PowerBiReport::with(['creator'])
-            ->withTrashed()
-            ->orderBy('created_at','desc')
-            ->paginate(15);
+        $reports = PowerBiReport::with(['creator'])->withTrashed()
+            ->orderBy('created_at','desc')->paginate(15);
 
         return view('admin.powerbi.index', compact('reports'));
     }
 
     public function create()
     {
-        $users = User::orderBy('name')->get(['id','name','email']);
+        $users     = User::orderBy('name')->get(['id','name','email']);
         $divisions = Division::orderBy('name')->get(['id','name']);
-        return view('admin.powerbi.create', compact('users','divisions'));
+        $sites     = Site::orderBy('code')->get(['id','code','name']); // <— TAMBAHKAN
+
+        return view('admin.powerbi.create', compact('users','divisions','sites')); // <— KIRIM
     }
 
     public function store(Request $r)
@@ -46,6 +46,8 @@ class PowerBiAdminController extends Controller
             'user_ids.*'            => 'uuid|exists:users,id',
             'division_ids'          => 'array',
             'division_ids.*'        => 'uuid|exists:divisions,id',
+            'site_ids'              => 'array',                     // <— TAMBAHKAN
+            'site_ids.*'            => 'uuid|exists:sites,id',      // <— TAMBAHKAN
         ]);
 
         $report = PowerBiReport::create([
@@ -61,6 +63,7 @@ class PowerBiAdminController extends Controller
 
         $report->users()->sync($data['user_ids'] ?? []);
         $report->divisions()->sync($data['division_ids'] ?? []);
+        $report->sites()->sync($data['site_ids'] ?? []); // <— TAMBAHKAN
 
         // AUDIT: create
         if (function_exists('audit')) {
@@ -77,6 +80,7 @@ class PowerBiAdminController extends Controller
                 'grants' => [
                     'users'     => $data['user_ids'] ?? [],
                     'divisions' => $data['division_ids'] ?? [],
+                    'sites'     => $data['site_ids'] ?? [], // <— TAMBAHKAN
                 ],
             ], PowerBiReport::class, $report->id);
         }
@@ -86,12 +90,16 @@ class PowerBiAdminController extends Controller
 
     public function edit(PowerBiReport $report)
     {
-        $users = User::orderBy('name')->get(['id','name','email']);
-        $divisions = Division::orderBy('name')->get(['id','name']);
+        $users         = User::orderBy('name')->get(['id','name','email']);
+        $divisions     = Division::orderBy('name')->get(['id','name']);
+        $sites         = Site::orderBy('code')->get(['id','code','name']); // <— TAMBAHKAN
         $selectedUsers = $report->users()->pluck('users.id')->all();
         $selectedDivs  = $report->divisions()->pluck('divisions.id')->all();
+        $selectedSites = $report->sites()->pluck('sites.id')->all(); // <— TAMBAHKAN
 
-        return view('admin.powerbi.edit', compact('report','users','divisions','selectedUsers','selectedDivs'));
+        return view('admin.powerbi.edit', compact(
+            'report','users','divisions','sites','selectedUsers','selectedDivs','selectedSites' // <— KIRIM
+        ));
     }
 
     public function update(Request $r, PowerBiReport $report)
@@ -107,6 +115,8 @@ class PowerBiAdminController extends Controller
             'user_ids.*'            => 'uuid|exists:users,id',
             'division_ids'          => 'array',
             'division_ids.*'        => 'uuid|exists:divisions,id',
+            'site_ids'              => 'array',                // <— TAMBAHKAN
+            'site_ids.*'            => 'uuid|exists:sites,id', // <— TAMBAHKAN
         ]);
 
         // snapshot before
@@ -122,6 +132,7 @@ class PowerBiAdminController extends Controller
             'grants'    => [
                 'users'     => $report->users()->pluck('users.id')->all(),
                 'divisions' => $report->divisions()->pluck('divisions.id')->all(),
+                'sites'     => $report->sites()->pluck('sites.id')->all(), // <— TAMBAHKAN
             ],
         ];
 
@@ -136,6 +147,7 @@ class PowerBiAdminController extends Controller
 
         $report->users()->sync($data['user_ids'] ?? []);
         $report->divisions()->sync($data['division_ids'] ?? []);
+        $report->sites()->sync($data['site_ids'] ?? []); // <— TAMBAHKAN
 
         // snapshot after
         $after = [
@@ -150,10 +162,10 @@ class PowerBiAdminController extends Controller
             'grants'    => [
                 'users'     => $report->users()->pluck('users.id')->all(),
                 'divisions' => $report->divisions()->pluck('divisions.id')->all(),
+                'sites'     => $report->sites()->pluck('sites.id')->all(), // <— TAMBAHKAN
             ],
         ];
 
-        // AUDIT: update
         if (function_exists('audit')) {
             audit('powerbi.update', [
                 'report_id' => $report->id,
@@ -167,7 +179,6 @@ class PowerBiAdminController extends Controller
 
     public function destroy(PowerBiReport $report)
     {
-        // AUDIT sebelum delete (biar datanya masih ada)
         if (function_exists('audit')) {
             audit('powerbi.delete', [
                 'report_id' => $report->id,
@@ -184,7 +195,6 @@ class PowerBiAdminController extends Controller
         $report = PowerBiReport::withTrashed()->findOrFail($id);
         $report->restore();
 
-        // AUDIT: restore
         if (function_exists('audit')) {
             audit('powerbi.restore', [
                 'report_id' => $report->id,

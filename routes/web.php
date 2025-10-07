@@ -2,33 +2,41 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Breeze default
+// ====== Breeze (default) ======
 use App\Http\Controllers\ProfileController;
 
-// Power BI (user-facing)
+// ====== Power BI (User-facing) ======
 use App\Http\Controllers\PowerBiController;
 
-// Power BI Admin
+// ====== Admin Controllers ======
 use App\Http\Controllers\Admin\PowerBiAdminController;
-
-// Admin User & Audit
 use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\Admin\AuditLogController;
-
-// Division Admin
 use App\Http\Controllers\Admin\DivisionAdminController;
+use App\Http\Controllers\Admin\SiteAdminController;       // CRUD Sites (admin)
+use App\Http\Controllers\Admin\SiteContextController;     // Pilih/switch site aktif user
 
-// ===== Sites (NEW) =====
-use App\Http\Controllers\Admin\SiteAdminController;       // CRUD admin
-use App\Http\Controllers\Admin\SiteContextController;     // pilih/switch site aktif user
+/*
+|--------------------------------------------------------------------------
+| Route Patterns (opsional tapi disarankan)
+|--------------------------------------------------------------------------
+| Jika pakai UUID untuk model tertentu, ini membantu Laravel membatalkan
+| route yang tidak match sebelum masuk controller.
+*/
+
+Route::pattern('user',     '[0-9a-fA-F-]{36}');
+Route::pattern('division', '[0-9a-fA-F-]{36}');
+Route::pattern('site',     '[0-9a-fA-F-]{36}');
+Route::pattern('report',   '[0-9a-fA-F-]{36}'); // jika PowerBiReport pakai UUID
 
 /*
 |--------------------------------------------------------------------------
 | Public / Landing
 |--------------------------------------------------------------------------
 */
-
-Route::get('/', fn() => view('welcome'));
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -46,42 +54,61 @@ Route::get('/dashboard', fn() => view('dashboard'))
 */
 Route::middleware('auth')->group(function () {
 
-    // =========================
-    // Profile (Breeze)
-    // =========================
+    /*
+    |=========================
+    | Profile (Breeze)
+    |=========================
+    */
     Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // =========================
-    // SITE CONTEXT (NEW) - Semua user login boleh pilih site aktif
-    // =========================
+    /*
+    |=========================
+    | SITE CONTEXT (Semua user login boleh pilih site aktif)
+    |=========================
+    */
     Route::prefix('site')->name('site.')->group(function () {
         // Halaman pilih site (dropdown/grid)
-        Route::get('/select', [SiteContextController::class, 'select'])->name('select');
-        // Action set site aktif (simpan ke session / user default)
+        Route::get('/select',  [SiteContextController::class, 'select'])->name('select');
+
+        // Action set site aktif (simpan ke session)
         Route::post('/switch', [SiteContextController::class, 'switch'])->name('switch');
 
-        // Opsional: set sebagai default di profile user (kalau kamu sediakan)
+        // Opsional: set default site di profil user
         Route::post('/set-default', [SiteContextController::class, 'setDefault'])->name('setDefault');
     });
 
-    // =========================
-    // POWER BI - USER (VIEW ONLY)
-    // =========================
-    Route::prefix('dashboards')
-        ->name('powerbi.')
-        ->group(function () {
-            Route::get('/',               [PowerBiController::class, 'index'])->name('index'); // list view-only
-            Route::get('/{report}',       [PowerBiController::class, 'show'])->name('show');   // detail view-only
-        });
+    /*
+    |=========================
+    | POWER BI - USER (VIEW ONLY)
+    |=========================
+    */
+    Route::prefix('dashboards')->name('powerbi.')->group(function () {
+    // Jadikan "/" bernama powerbi.index (alias lama)
+    Route::get('/', [PowerBiController::class, 'sites'])->name('index');
 
-    // =========================
-    // POWER BI - ADMIN (GM & SUPER ADMIN)
-    // =========================
+    // Opsional: biar 'powerbi.sites' tetap ada (redirect ke index)
+    Route::get('/sites', fn () => redirect()->route('powerbi.index'))->name('sites');
+
+    Route::get('/site/{site}', [PowerBiController::class, 'siteReports'])->name('site.reports');
+    Route::get('/report/{report}', [PowerBiController::class, 'show'])->name('show');
+
+    // Back-compat: /dashboards/{report} (UUID) -> detail report
+    Route::get('/{report}', function ($report) {
+        return redirect()->route('powerbi.show', ['report' => $report]);
+    })->where('report', '[0-9a-fA-F-]{36}');
+});
+
+
+    /*
+    |=========================
+    | POWER BI - ADMIN (GM & SUPER ADMIN)
+    |=========================
+    */
     Route::prefix('admin/powerbi')
         ->name('admin.powerbi.')
-        ->middleware('role:gm,super_admin')
+        ->middleware('role:gm|super_admin') // gunakan pipa (OR) — middleware kita sudah dukung
         ->group(function () {
             Route::get('/',               [PowerBiAdminController::class, 'index'])->name('index');
             Route::get('/create',         [PowerBiAdminController::class, 'create'])->name('create');
@@ -92,12 +119,14 @@ Route::middleware('auth')->group(function () {
             Route::post('/{id}/restore',  [PowerBiAdminController::class, 'restore'])->name('restore');
         });
 
-    // =========================
-    // SITES - ADMIN (NEW) (GM & SUPER ADMIN)
-    // =========================
+    /*
+    |=========================
+    | SITES - ADMIN (GM & SUPER ADMIN)
+    |=========================
+    */
     Route::prefix('admin/sites')
         ->name('admin.sites.')
-        ->middleware('role:gm,super_admin')
+        ->middleware('role:gm|super_admin')
         ->group(function () {
             Route::get('/',               [SiteAdminController::class, 'index'])->name('index');
             Route::get('/create',         [SiteAdminController::class, 'create'])->name('create');
@@ -107,19 +136,21 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{site}',      [SiteAdminController::class, 'destroy'])->name('destroy');
 
             // Soft delete utilities
-            Route::post('/{id}/restore',  [SiteAdminController::class, 'restore'])->name('restore');
-            Route::delete('/{id}/force',  [SiteAdminController::class, 'forceDelete'])->name('forceDelete');
+            Route::post('/{id}/restore',   [SiteAdminController::class, 'restore'])->name('restore');
+            Route::delete('/{id}/force',   [SiteAdminController::class, 'forceDelete'])->name('forceDelete');
 
-            // Opsional: toggle aktif/nonaktif
+            // Toggle aktif/nonaktif
             Route::patch('/{site}/toggle', [SiteAdminController::class, 'toggleActive'])->name('toggle');
         });
 
-    // =========================
-    // DIVISION MANAGEMENT (GM & SUPER ADMIN)
-    // =========================
+    /*
+    |=========================
+    | DIVISION MANAGEMENT (GM & SUPER ADMIN)
+    |=========================
+    */
     Route::prefix('admin/divisions')
         ->name('admin.divisions.')
-        ->middleware('role:gm,super_admin')
+        ->middleware('role:gm|super_admin')
         ->group(function () {
             Route::get('/',                 [DivisionAdminController::class, 'index'])->name('index');
             Route::get('/create',           [DivisionAdminController::class, 'create'])->name('create');
@@ -130,25 +161,29 @@ Route::middleware('auth')->group(function () {
             Route::post('/{id}/restore',    [DivisionAdminController::class, 'restore'])->name('restore');
         });
 
-    // =========================
-    // USERS - ADMIN (GM & SUPER ADMIN)
-    // =========================
+    /*
+    |=========================
+    | USERS - ADMIN (GM & SUPER ADMIN)
+    |=========================
+    */
     Route::prefix('admin/users')
         ->name('admin.users.')
-        ->middleware('role:gm,super_admin')
+        ->middleware('role:gm|super_admin')
         ->group(function () {
-            Route::get('/create',  [UserAdminController::class, 'create'])->name('create');
-            Route::post('/',       [UserAdminController::class, 'store'])->name('store');
-            Route::get('/',        [UserAdminController::class, 'index'])->name('index');
-            Route::get('/{user}/edit',           [UserAdminController::class, 'edit'])->name('edit');
-            Route::patch('/{user}/division',     [UserAdminController::class, 'updateDivision'])->name('updateDivision');
-            Route::post('/{user}/reset-password',[UserAdminController::class, 'resetPassword'])->name('resetPassword');
-            Route::delete('/{user}',             [UserAdminController::class, 'destroy'])->name('destroy');
+            Route::get('/',                        [UserAdminController::class, 'index'])->name('index');
+            Route::get('/create',                  [UserAdminController::class, 'create'])->name('create');
+            Route::post('/',                       [UserAdminController::class, 'store'])->name('store');
+            Route::get('/{user}/edit',             [UserAdminController::class, 'edit'])->name('edit');
+            Route::patch('/{user}/division',       [UserAdminController::class, 'updateDivision'])->name('updateDivision');
+            Route::post('/{user}/reset-password',  [UserAdminController::class, 'resetPassword'])->name('resetPassword');
+            Route::delete('/{user}',               [UserAdminController::class, 'destroy'])->name('destroy');
         });
 
-    // =========================
-    // AUDIT LOG (SUPER ADMIN ONLY)
-    // =========================
+    /*
+    |=========================
+    | AUDIT LOG (SUPER ADMIN ONLY)
+    |=========================
+    */
     Route::prefix('admin/audit')
         ->name('admin.audit.')
         ->middleware('role:super_admin')
@@ -160,4 +195,9 @@ Route::middleware('auth')->group(function () {
         });
 });
 
+/*
+|--------------------------------------------------------------------------
+| Auth scaffolding (Breeze/Fortify/etc.)
+|--------------------------------------------------------------------------
+*/
 require __DIR__ . '/auth.php';

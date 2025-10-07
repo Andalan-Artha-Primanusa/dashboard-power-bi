@@ -1,37 +1,48 @@
+{{-- resources/views/layouts/sidenav.blade.php --}}
 <aside class="w-72 bg-maroon-800 text-white flex flex-col h-screen">
+
   @php
     use Illuminate\Support\Str;
     use Illuminate\Support\Facades\Auth;
     use App\Models\Site;
 
     $u = Auth::user();
+    try { $u?->loadMissing('role'); } catch (\Throwable $e) {}
 
-    // Role & label
-    $rawRole = $u->role->key ?? $u->role->slug ?? $u->role->name ?? (is_string($u->role ?? null) ? $u->role : '') ?? '';
-    $norm    = Str::of($rawRole)->lower()->replace(['_', '-'], ' ')->squish()->toString();
-    $map     = ['gm'=>'gm','general manager'=>'gm','generalmanager'=>'gm','manager'=>'manager','mgr'=>'manager'];
-    $roleKey = $map[$norm] ?? $norm;
-    $isSuperAdmin = ($u->role ?? '') === 'super_admin';
-    $isGM         = $roleKey === 'gm' || ($u->role ?? '') === 'gm';
+    // ===== Normalisasi Role =====
+    $rawRole = $u->role->key
+        ?? $u->role->slug
+        ?? $u->role->name
+        ?? (is_string($u->role ?? null) ? $u->role : '')
+        ?? '';
+
+    $norm = Str::of($rawRole)->lower()->replace(['_', '-'], ' ')->squish()->toString();
+    $map  = [
+      'gm'              => 'gm',
+      'general manager' => 'gm',
+      'generalmanager'  => 'gm',
+      'mgr'             => 'manager',
+      'manager'         => 'manager',
+      'super admin'     => 'super_admin',
+      'superadmin'      => 'super_admin',
+      'sa'              => 'super_admin',
+      'root'            => 'super_admin',
+    ];
+    $roleKey      = $map[$norm] ?? $norm;
+    $isSuperAdmin = ($roleKey === 'super_admin');
+    $isGM         = ($roleKey === 'gm');
     $displayRole  = $isSuperAdmin ? 'Super Admin' : (Str::title($roleKey ?: 'User'));
 
-    // User info
-    $name  = $u->name ?? 'User';
-    $email = $u->email ?? '';
-    $photo = property_exists($u,'profile_photo_url') && $u->profile_photo_url ? $u->profile_photo_url : null;
+    // ===== User Info =====
+    $name     = $u->name ?? 'User';
+    $email    = $u->email ?? '';
+    $photo    = property_exists($u,'profile_photo_url') && $u->profile_photo_url ? $u->profile_photo_url : null;
     $initials = collect(preg_split('/\s+/', trim($name)))->filter()->map(fn($p)=>Str::upper(Str::substr($p,0,1)))->take(2)->implode('') ?: 'U';
 
-    // Site aktif & izin ganti
+    // ===== Site Aktif =====
     $activeSiteId = session('site_id') ?? ($u->default_site_id ?? null);
     $activeSite   = $activeSiteId ? Site::find($activeSiteId) : null;
     $siteLabel    = $activeSite ? (($activeSite->code ?? 'SITE') . ' — ' . ($activeSite->name ?? '')) : 'Belum memilih site';
-
-    $allowedSiteIds = [];
-    if (method_exists($u, 'sites')) {
-      try { $allowedSiteIds = $u->sites()->pluck('sites.id')->all(); } catch (\Throwable $e) { $allowedSiteIds = []; }
-    }
-    if (empty($allowedSiteIds) && !empty($u->default_site_id)) $allowedSiteIds = [$u->default_site_id];
-    $canSwitchSite = $isSuperAdmin || $isGM || (count(array_unique(array_filter($allowedSiteIds))) > 1);
 
     $isMobile = ($mobile ?? false) === true;
   @endphp
@@ -82,29 +93,11 @@
         <div class="min-w-0">
           <div class="text-xs uppercase tracking-wide text-gold-300/80">Site Aktif</div>
           <div class="mt-1 text-sm font-semibold text-gold-100 truncate">{{ $siteLabel }}</div>
-          <div class="mt-1 flex items-center gap-1.5 text-[11px]">
-            @if($canSwitchSite)
-              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12h18M12 3l3.5 3.5L12 10M12 14l3.5 3.5L12 21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="text-emerald-300">Dapat diganti</span>
-            @else
-              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 17a2 2 0 0 0 2-2v-3a2 2 0 1 0-4 0v3a2 2 0 0 0 2 2Zm7-5a7 7 0 1 0-14 0v3H5a2 2 0 0 0-2 2v2h18v-2a2 2 0 0 0-2-2h-0v-3Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="text-amber-300">Terkunci</span>
-            @endif
-          </div>
         </div>
-
-        @if($canSwitchSite)
-          <a href="{{ route('site.select') }}"
-             class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold-500 text-maroon-900 text-xs font-extrabold hover:bg-gold-400 shadow">
-            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v6h6M20 20v-6h-6M20 4l-6 6M4 20l6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Ganti
-          </a>
-        @else
-          <button type="button" class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-maroon-700 text-gold-200 text-xs font-semibold cursor-not-allowed ring-1 ring-maroon-600/80">
-            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 17a2 2 0 0 0 2-2v-3a2 2 0 1 0-4 0v3a2 2 0 0 0 2 2Zm7-5a7 7 0 1 0-14 0v3H5a2 2 0 0 0-2 2v2h18v-2a2 2 0 0 0-2-2h-0v-3Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Terkunci
-          </button>
-        @endif
+        <a href="{{ route('site.select') }}"
+           class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold-500 text-maroon-900 text-xs font-extrabold hover:bg-gold-400 shadow">
+          Ganti
+        </a>
       </div>
     </div>
   </div>
@@ -126,18 +119,29 @@
       📈 Power BI
     </a>
 
-    @if($u && in_array($u->role ?? 'user',['gm','super_admin'],true))
+    {{-- ADMIN SECTION --}}
+    @if($u && ($isGM || $isSuperAdmin))
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-gold-300/80">Admin</div>
+
+      {{-- 🏞️ Sites --}}
+      <a href="{{ route('admin.sites.index') }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+                {{ request()->routeIs('admin.sites.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+        🏞️ Sites
+      </a>
+
       <a href="{{ route('admin.powerbi.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
                 {{ request()->routeIs('admin.powerbi.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         🧰 Power BI Admin
       </a>
+
       <a href="{{ route('admin.divisions.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
                 {{ request()->routeIs('admin.divisions.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         🏢 Divisions
       </a>
+
       <a href="{{ route('admin.users.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
                 {{ request()->routeIs('admin.users.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
@@ -145,7 +149,8 @@
       </a>
     @endif
 
-    @if($u && ($u->can('view-audit') || ($u->role ?? 'user') === 'super_admin'))
+    {{-- SECURITY --}}
+    @if($u && ($u->can('view-audit') || $isSuperAdmin))
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-gold-300/80">Security</div>
       <a href="{{ route('admin.audit.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition

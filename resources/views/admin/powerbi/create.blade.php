@@ -14,7 +14,8 @@
     </div>
   </div>
 
-  <div class="p-4 rounded-xl ring-1 ring-slate-200 grid md:grid-cols-2 gap-6">
+  <div class="p-4 rounded-xl ring-1 ring-slate-200 grid md:grid-cols-3 gap-6">
+    {{-- Bagikan ke User --}}
     <div>
       <h3 class="font-semibold mb-2">Bagikan ke User</h3>
       <div class="max-h-64 overflow-auto space-y-1">
@@ -26,6 +27,8 @@
         @endforeach
       </div>
     </div>
+
+    {{-- Bagikan ke Divisi --}}
     <div>
       <h3 class="font-semibold mb-2">Bagikan ke Divisi</h3>
       <div class="max-h-64 overflow-auto space-y-1">
@@ -33,6 +36,19 @@
           <label class="flex items-center gap-2 text-sm">
             <input type="checkbox" name="division_ids[]" value="{{ $d->id }}">
             {{ $d->name }}
+          </label>
+        @endforeach
+      </div>
+    </div>
+
+    {{-- Bagikan ke Site --}}
+    <div>
+      <h3 class="font-semibold mb-2">Bagikan ke Site</h3>
+      <div class="max-h-64 overflow-auto space-y-1">
+        @foreach($sites as $s)
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="site_ids[]" value="{{ $s->id }}">
+            {{ $s->code }} - {{ $s->name }}
           </label>
         @endforeach
       </div>

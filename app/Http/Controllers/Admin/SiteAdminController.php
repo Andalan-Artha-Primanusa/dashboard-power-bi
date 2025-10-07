@@ -9,19 +9,30 @@ use Illuminate\Support\Facades\DB;
 
 class SiteAdminController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth', 'role:gm|super_admin']);
+    }
+
     public function index(Request $request)
     {
-        // Bisa filter: ?only=trashed untuk melihat yang terhapus
-        $only = $request->query('only');
+        $only = $request->query('only'); // 'trashed' to show deleted
+        $q    = trim((string) $request->query('q'));
 
         $query = Site::query()->latest();
-        if ($only === 'trashed') {
-            $query->onlyTrashed();
+        if ($only === 'trashed') $query->onlyTrashed();
+
+        if ($q) {
+            $query->where(function ($w) use ($q) {
+                $w->where('name','like',"%$q%")
+                  ->orWhere('code','like',"%$q%")
+                  ->orWhere('region','like',"%$q%");
+            });
         }
 
         $sites = $query->paginate(20)->withQueryString();
 
-        return view('admin.sites.index', compact('sites', 'only'));
+        return view('admin.sites.index', compact('sites','only','q'));
     }
 
     public function create()
@@ -38,12 +49,12 @@ class SiteAdminController extends Controller
             'address'   => ['nullable','string','max:500'],
             'lat'       => ['nullable','numeric','between:-90,90'],
             'lng'       => ['nullable','numeric','between:-180,180'],
-            'is_active' => ['nullable','boolean'],
+            'is_active' => ['sometimes','boolean'],
             'config'    => ['nullable','array'],
         ]);
 
-        DB::transaction(function () use ($data, &$site) {
-            $site = Site::create([
+        DB::transaction(function () use ($data) {
+            Site::create([
                 'code'       => $data['code'],
                 'name'       => $data['name'],
                 'region'     => $data['region']   ?? null,
@@ -56,7 +67,7 @@ class SiteAdminController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.sites.index')->with('success', 'Site created.');
+        return redirect()->route('admin.sites.index')->with('success','Site created.');
     }
 
     public function edit(Site $site)
@@ -73,11 +84,11 @@ class SiteAdminController extends Controller
             'address'   => ['nullable','string','max:500'],
             'lat'       => ['nullable','numeric','between:-90,90'],
             'lng'       => ['nullable','numeric','between:-180,180'],
-            'is_active' => ['nullable','boolean'],
+            'is_active' => ['sometimes','boolean'],
             'config'    => ['nullable','array'],
         ]);
 
-        DB::transaction(function () use ($data, $site) {
+        DB::transaction(function () use ($data,$site) {
             $site->update([
                 'code'      => $data['code'],
                 'name'      => $data['name'],
@@ -90,35 +101,32 @@ class SiteAdminController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.sites.index')->with('success', 'Site updated.');
+        return redirect()->route('admin.sites.index')->with('success','Site updated.');
     }
 
     public function destroy(Site $site)
     {
-        $site->delete(); // soft delete
-        return back()->with('success', 'Site deleted.');
+        $site->delete();
+        return back()->with('success','Site deleted.');
     }
 
     public function restore(string $id)
     {
-        $restored = Site::onlyTrashed()->where('id', $id)->firstOrFail();
-        $restored->restore();
-
-        return back()->with('success', 'Site restored.');
+        $site = Site::onlyTrashed()->findOrFail($id);
+        $site->restore();
+        return back()->with('success','Site restored.');
     }
 
     public function forceDelete(string $id)
     {
-        $site = Site::onlyTrashed()->where('id', $id)->firstOrFail();
+        $site = Site::onlyTrashed()->findOrFail($id);
         $site->forceDelete();
-
-        return back()->with('success', 'Site permanently deleted.');
+        return back()->with('success','Site permanently deleted.');
     }
 
     public function toggleActive(Site $site)
     {
         $site->update(['is_active' => ! (bool) $site->is_active]);
-
-        return back()->with('success', 'Site status toggled.');
+        return back()->with('success','Site status toggled.');
     }
 }

@@ -8,14 +8,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+// ===== Tambahkan import yang diperlukan =====
+use App\Models\User;
+use App\Models\Division;
+use App\Models\Site;
+
 class PowerBiReport extends Model
 {
     use HasUuids, SoftDeletes;
 
-    /** Pastikan ini match dengan migration kamu */
     protected $table = 'powerbi_reports';
 
-    /** Kolom yang boleh diisi mass-assignment */
     protected $fillable = [
         'name',
         'embed_url',
@@ -37,22 +40,24 @@ class PowerBiReport extends Model
     /* =========================
      |  RELATIONS
      |=========================*/
-
-    /** User yang punya akses langsung (pivot powerbi_report_user) */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'powerbi_report_user', 'report_id', 'user_id')
             ->withTimestamps();
     }
 
-    /** Divisi yang punya akses (pivot powerbi_report_division) */
     public function divisions(): BelongsToMany
     {
         return $this->belongsToMany(Division::class, 'powerbi_report_division', 'report_id', 'division_id')
             ->withTimestamps();
     }
 
-    /** Siapa yang membuat entri report ini */
+    public function sites(): BelongsToMany
+    {
+        return $this->belongsToMany(Site::class, 'powerbi_report_site', 'report_id', 'site_id')
+            ->withTimestamps();
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -63,12 +68,17 @@ class PowerBiReport extends Model
      |=========================*/
 
     /**
-     * Report yang dapat dilihat oleh user:
-     * - punya akses langsung via pivot users(), atau
-     * - user-nya berada di division yang punya akses via divisions().
+     * Visible jika:
+     *  - dibagikan langsung ke user, ATAU
+     *  - dibagikan ke division user, ATAU
+     *  - dibagikan ke site aktif user, ATAU
+     *  - (opsional) tidak punya grant sama sekali => global.
      */
-    public function scopeVisibleTo($q, User|string|null $user)
+    public function scopeVisibleTo($q, User|string|null $user, array $opts = [])
     {
+        // $opts['global_if_no_grant'] default true
+        $globalIfNoGrant = $opts['global_if_no_grant'] ?? true;
+
         if (!$user) {
             return $q->whereRaw('1=0');
         }
@@ -78,10 +88,34 @@ class PowerBiReport extends Model
             return $q->whereRaw('1=0');
         }
 
-        return $q->where(function ($w) use ($u) {
+        // Ambil site aktif: SiteContext::currentId() -> session('active_site_id') -> $u->site_id
+        $activeSiteId = null;
+        if (class_exists(\App\Support\SiteContext::class) && method_exists(\App\Support\SiteContext::class, 'currentId')) {
+            $activeSiteId = \App\Support\SiteContext::currentId();
+        }
+        $activeSiteId = $activeSiteId ?? session('active_site_id') ?? ($u->site_id ?? null);
+
+        return $q->where(function ($w) use ($u, $activeSiteId, $globalIfNoGrant) {
+            // direct user grant
             $w->whereHas('users', fn($wu) => $wu->where('users.id', $u->id));
+
+            // division grant
             if ($u->division_id) {
                 $w->orWhereHas('divisions', fn($wd) => $wd->where('divisions.id', $u->division_id));
+            }
+
+            // site grant
+            if ($activeSiteId) {
+                $w->orWhereHas('sites', fn($ws) => $ws->where('sites.id', $activeSiteId));
+            }
+
+            // global (tanpa grant sama sekali)
+            if ($globalIfNoGrant) {
+                $w->orWhere(function ($x) {
+                    $x->whereDoesntHave('users')
+                      ->whereDoesntHave('divisions')
+                      ->whereDoesntHave('sites');
+                });
             }
         });
     }
@@ -89,8 +123,6 @@ class PowerBiReport extends Model
     /* =========================
      |  HELPERS
      |=========================*/
-
-    /** Build embed URL lengkap dengan opsi UI (tanpa controller) */
     public function embedUrlWithUI(array $ui = []): string
     {
         $defaults = [
@@ -106,7 +138,6 @@ class PowerBiReport extends Model
         return $this->embed_url . $sep . http_build_query($params);
     }
 
-    /** Normalisasi boolean ke 'true'/'false' untuk query string */
     protected function normalizeBoolParams(array $params): array
     {
         return collect($params)->map(function ($v) {
@@ -118,10 +149,8 @@ class PowerBiReport extends Model
     }
 
     /* =========================
-     |  EVENTS (quality-of-life)
+     |  EVENTS
      |=========================*/
-
-    /** Auto-set created_by jika ada user login */
     protected static function booted(): void
     {
         static::creating(function (self $m) {
@@ -129,11 +158,5 @@ class PowerBiReport extends Model
                 $m->created_by = auth()->id();
             }
         });
-    }
-
-    public function sites()
-    {
-        return $this->belongsToMany(Site::class, 'powerbi_report_site', 'report_id', 'site_id')
-            ->withTimestamps();
     }
 }
