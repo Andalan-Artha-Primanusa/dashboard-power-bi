@@ -1,6 +1,8 @@
 <!doctype html>
-<html lang="{{ str_replace('_','-', app()->getLocale()) }}" 
-      x-data="{ sidebarOpen:false }" 
+<html lang="{{ str_replace('_','-', app()->getLocale()) }}"
+      x-data="{ sidebarOpen:false }"
+      x-on:open-sidebar.window="sidebarOpen = true"
+      x-on:close-sidebar.window="sidebarOpen = false"
       :class="sidebarOpen ? 'overflow-hidden' : ''">
 <head>
   <meta charset="utf-8">
@@ -24,7 +26,7 @@
   {{-- Mobile topbar --}}
   <div class="lg:hidden sticky top-0 z-40 bg-maroon-800 text-gold-200 border-b border-maroon-700">
     <div class="px-4 h-14 flex items-center justify-between">
-      <button @click="sidebarOpen=true" class="p-2 rounded-md hover:bg-maroon-700" aria-label="Open sidebar">
+      <button @click="$dispatch('open-sidebar')" class="p-2 rounded-md hover:bg-maroon-700" aria-label="Open sidebar" type="button">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
@@ -39,14 +41,16 @@
 
     {{-- Sidebar (desktop) --}}
     <div class="hidden lg:flex lg:h-full">
-      {{-- Pastikan di sidenav pakai <aside class="w-72 h-full flex flex-col ..."> --}}
       @include('layouts.sidenav')
     </div>
 
     {{-- Sidebar (mobile slide-over) --}}
     <div class="lg:hidden">
       <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-50">
-        <div class="absolute inset-0 bg-black/30" @click="sidebarOpen=false" aria-hidden="true"></div>
+        {{-- Backdrop --}}
+        <div class="absolute inset-0 bg-black/30" @click="$dispatch('close-sidebar')" aria-hidden="true"></div>
+
+        {{-- Panel --}}
         <div class="absolute inset-y-0 left-0 w-72">
           <div class="h-full shadow-xl bg-maroon-800">
             @include('layouts.sidenav', ['mobile' => true])
@@ -58,7 +62,6 @@
     {{-- MAIN CONTENT --}}
     <div class="flex-1 min-w-0 min-h-0 flex flex-col">
 
-      {{-- Header via @section("header") --}}
       @hasSection('header')
         <header class="border-b bg-white">
           <div class="py-6 px-4 sm:px-6 lg:px-8 mx-0 max-w-none">
@@ -67,7 +70,6 @@
         </header>
       @endif
 
-      {{-- Header via <x-slot name="header"> --}}
       @if (isset($header))
         <div class="px-4 pt-6 mx-0 max-w-none">
           {{ $header }}
@@ -76,12 +78,12 @@
 
       {{-- Konten dengan scroll --}}
       <main class="flex-1 w-full px-4 py-8 lg:px-8 mx-0 max-w-none overflow-y-auto">
-        {{-- Flash & errors --}}
         @if (session('status'))
           <div class="mb-4 p-3 rounded-lg bg-green-50 text-emerald-700 border border-green-200">
             {{ session('status') }}
           </div>
         @endif
+
         @if ($errors->any())
           <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200">
             <ul class="list-disc list-inside text-sm">
@@ -92,7 +94,6 @@
           </div>
         @endif
 
-        {{-- Hybrid: slot > section --}}
         @if (isset($slot))
           {{ $slot }}
         @else

@@ -44,7 +44,7 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth','verified'])
+    ->middleware(['auth', 'verified'])
     ->name('dashboard');
 /*
 |--------------------------------------------------------------------------
@@ -84,20 +84,20 @@ Route::middleware('auth')->group(function () {
     |=========================
     */
     Route::prefix('dashboards')->name('powerbi.')->group(function () {
-    // Jadikan "/" bernama powerbi.index (alias lama)
-    Route::get('/', [PowerBiController::class, 'sites'])->name('index');
+        // Jadikan "/" bernama powerbi.index (alias lama)
+        Route::get('/', [PowerBiController::class, 'sites'])->name('index');
 
-    // Opsional: biar 'powerbi.sites' tetap ada (redirect ke index)
-    Route::get('/sites', fn () => redirect()->route('powerbi.index'))->name('sites');
+        // Opsional: biar 'powerbi.sites' tetap ada (redirect ke index)
+        Route::get('/sites', fn() => redirect()->route('powerbi.index'))->name('sites');
 
-    Route::get('/site/{site}', [PowerBiController::class, 'siteReports'])->name('site.reports');
-    Route::get('/report/{report}', [PowerBiController::class, 'show'])->name('show');
+        Route::get('/site/{site}', [PowerBiController::class, 'siteReports'])->name('site.reports');
+        Route::get('/report/{report}', [PowerBiController::class, 'show'])->name('show');
 
-    // Back-compat: /dashboards/{report} (UUID) -> detail report
-    Route::get('/{report}', function ($report) {
-        return redirect()->route('powerbi.show', ['report' => $report]);
-    })->where('report', '[0-9a-fA-F-]{36}');
-});
+        // Back-compat: /dashboards/{report} (UUID) -> detail report
+        Route::get('/{report}', function ($report) {
+            return redirect()->route('powerbi.show', ['report' => $report]);
+        })->where('report', '[0-9a-fA-F-]{36}');
+    });
 
 
     /*
@@ -177,7 +177,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/{user}/reset-password',  [UserAdminController::class, 'resetPassword'])->name('resetPassword');
             Route::delete('/{user}',               [UserAdminController::class, 'destroy'])->name('destroy');
         });
-
+    Route::patch('admin/users/{user}/site', [\App\Http\Controllers\Admin\UserAdminController::class, 'updateSite'])
+        ->name('admin.users.updateSite');
     /*
     |=========================
     | AUDIT LOG (SUPER ADMIN ONLY)

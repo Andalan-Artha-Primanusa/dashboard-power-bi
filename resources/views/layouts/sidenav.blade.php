@@ -1,75 +1,69 @@
 {{-- resources/views/layouts/sidenav.blade.php --}}
-<aside class="w-72 bg-maroon-800 text-white flex flex-col h-screen">
-
+<aside class="w-72 bg-maroon-800 text-white flex flex-col h-full">
   @php
-  use Illuminate\Support\Str;
-  use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Str;
+    use Illuminate\Support\Facades\Auth;
 
-  // Hindari error kalau class Site belum diload
-  try { $hasSiteModel = class_exists(\App\Models\Site::class); } catch (\Throwable $e) { $hasSiteModel = false; }
-  if ($hasSiteModel) { $SiteClass = \App\Models\Site::class; }
+    // ====== user & role mapping ======
+    $u = Auth::user();
+    try { $u?->loadMissing('role'); } catch (\Throwable $e) {}
 
-  $u = Auth::user();
-  try { $u?->loadMissing('role'); } catch (\Throwable $e) {}
+    $rawRole = $u->role->key
+        ?? $u->role->slug
+        ?? $u->role->name
+        ?? (is_string($u->role ?? null) ? $u->role : '')
+        ?? '';
+    $norm = Str::of($rawRole)->lower()->replace(['_', '-'], ' ')->squish()->toString();
+    $roleMap = [
+      'general manager' => 'gm',
+      'generalmanager'  => 'gm',
+      'gm'              => 'gm',
+      'mgr'             => 'manager',
+      'manager'         => 'manager',
+      'super admin'     => 'super_admin',
+      'superadmin'      => 'super_admin',
+      'sa'              => 'super_admin',
+      'root'            => 'super_admin',
+    ];
+    $roleKey       = $roleMap[$norm] ?? $norm;
+    $isGM          = $roleKey === 'gm';
+    $isSuperAdmin  = $roleKey === 'super_admin';
+    $displayRole   = $isSuperAdmin ? 'Super Admin' : (Str::title($roleKey ?: 'User'));
 
-  // ========== ROLE ==========
-  $rawRole = $u->role->key
-      ?? $u->role->slug
-      ?? $u->role->name
-      ?? (is_string($u->role ?? null) ? $u->role : '')
-      ?? '';
+    // ====== user info ======
+    $name  = $u->name  ?? 'User';
+    $email = $u->email ?? '';
+    $photo = property_exists($u,'profile_photo_url') && $u->profile_photo_url ? $u->profile_photo_url : null;
+    $initials = collect(preg_split('/\s+/', trim($name)))->filter()->map(fn($p)=>Str::upper(Str::substr($p,0,1)))->take(2)->implode('') ?: 'U';
 
-  $norm = Str::of($rawRole)->lower()->replace(['_', '-'], ' ')->squish()->toString();
-  $map = [
-    'general manager' => 'gm',
-    'generalmanager'  => 'gm',
-    'mgr'             => 'manager',
-    'super admin'     => 'super_admin',
-    'superadmin'      => 'super_admin',
-    'sa'              => 'super_admin',
-    'root'            => 'super_admin',
-    'gm'              => 'gm',
-    'manager'         => 'manager',
-  ];
-  $roleKey      = $map[$norm] ?? $norm;
-  $isSuperAdmin = in_array($roleKey, ['super_admin'], true);
-  $isGM         = in_array($roleKey, ['gm'], true);
-  $displayRole  = $isSuperAdmin ? 'Super Admin' : (Str::title($roleKey ?: 'User'));
+    // ====== model Site (optional) ======
+    try { $hasSiteModel = class_exists(\App\Models\Site::class); } catch (\Throwable $e) { $hasSiteModel = false; }
+    if ($hasSiteModel) { $SiteClass = \App\Models\Site::class; }
 
-  // ========== USER INFO ==========
-  $name     = $u->name  ?? 'User';
-  $email    = $u->email ?? '';
-  $photo    = property_exists($u,'profile_photo_url') && $u->profile_photo_url ? $u->profile_photo_url : null;
-  $initials = collect(preg_split('/\s+/', trim($name)))->filter()->map(fn($p)=>Str::upper(Str::substr($p,0,1)))->take(2)->implode('') ?: 'U';
+    // ====== site aktif & switching rules ======
+    $activeSiteId = session('site_id') ?? ($u->default_site_id ?? null);
 
-  // ========== SITE CONTEXT ==========
-  $activeSiteId = session('site_id') ?? ($u->default_site_id ?? null);
-
-  // Auto-snap ke default untuk NON-GM
-  if (!$isGM && empty(session('site_id')) && !empty($u->default_site_id)) {
+    // Non-GM/SA snap ke default kalau belum ada di session
+    if (!$isGM && !$isSuperAdmin && empty(session('site_id')) && !empty($u->default_site_id)) {
       session(['site_id' => $u->default_site_id]);
       $activeSiteId = $u->default_site_id;
-  }
+    }
 
-  $activeSite   = null;
-  $siteLabel    = 'Belum memilih site';
-
-  if ($hasSiteModel && $activeSiteId) {
+    $activeSite = null;
+    if ($hasSiteModel && $activeSiteId) {
       try { $activeSite = $SiteClass::find($activeSiteId); } catch (\Throwable $e) {}
-  }
-  if ($activeSite) {
-      $siteLabel = ($activeSite->code ?? 'SITE') . ' — ' . ($activeSite->name ?? '');
-  }
+    }
+    $siteLabel = $activeSite ? (($activeSite->code ?? 'SITE').' — '.($activeSite->name ?? '')) : 'Belum memilih site';
 
-  // ====== SWITCH SITE (GM only) ======
-  $allowedSites = collect();
-  if ($hasSiteModel && $isGM) {
+    // daftar site untuk switch (GM & SA bisa)
+    $allowedSites = collect();
+    if ($hasSiteModel && ($isGM || $isSuperAdmin)) {
       try {
-          $q = method_exists($SiteClass,'active') ? $SiteClass::active() : $SiteClass::query()->where('is_active', true);
-          $allowedSites = $q->orderBy('name')->get();
+        $q = method_exists($SiteClass,'active') ? $SiteClass::active() : $SiteClass::query()->where('is_active',true);
+        $allowedSites = $q->orderBy('name')->get();
       } catch (\Throwable $e) {}
-  }
-  $canSwitchSite = $isGM && $allowedSites->isNotEmpty(); // STRICT: hanya GM
+    }
+    $canSwitchSite = ($isGM || $isSuperAdmin) && $allowedSites->isNotEmpty();
   @endphp
 
   {{-- HEADER --}}
@@ -79,8 +73,8 @@
       <span class="font-bold text-lg text-gold-400">BISA ERP</span>
     </a>
     @if(($mobile ?? false) === true)
-      <button @click="$root.sidebarOpen=false" class="p-2 rounded text-gold-300 hover:text-gold-100 lg:hidden" aria-label="Close sidebar">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+      <button type="button" @click="$dispatch('close-sidebar')" class="p-2 rounded text-gold-300 hover:text-gold-100 lg:hidden" aria-label="Close sidebar">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
@@ -109,7 +103,7 @@
     </div>
   </div>
 
-  {{-- SITE CARD --}}
+  {{-- SITE CARD + QUICK SWITCH --}}
   <div class="px-4 pt-3" x-data="{ openSwitch:false }">
     <div class="rounded-2xl bg-maroon-900/60 ring-1 ring-maroon-600 p-4">
       <div class="flex items-start justify-between gap-3">
@@ -122,8 +116,8 @@
             @endif
           </div>
           <div class="mt-1 flex items-center gap-1.5 text-[11px]">
-            @if($isGM)
-              <span class="text-emerald-300">Dapat diganti (GM)</span>
+            @if($isGM || $isSuperAdmin)
+              <span class="text-emerald-300">Dapat diganti ({{ $isSuperAdmin ? 'Super Admin' : 'GM' }})</span>
             @else
               <span class="text-amber-300">
                 @if($activeSite) Terkunci @else Terkunci — hubungi GM untuk set default @endif
@@ -132,8 +126,7 @@
           </div>
         </div>
 
-        {{-- Tombol "Ganti" -> GM ONLY --}}
-        @if($isGM && $allowedSites->isNotEmpty())
+        @if($canSwitchSite)
           <button type="button" @click="openSwitch = !openSwitch"
                   class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold-500 text-maroon-900 text-xs font-extrabold hover:bg-gold-400 shadow">
             Ganti
@@ -141,8 +134,7 @@
         @endif
       </div>
 
-      {{-- Panel Quick Switch (GM only) --}}
-      @if($isGM && $allowedSites->isNotEmpty())
+      @if($canSwitchSite)
         <div x-cloak x-show="openSwitch" x-transition class="mt-3 rounded-xl border border-maroon-600/70 bg-maroon-900 p-3">
           <form action="{{ route('site.switch') }}" method="POST" class="space-y-2">
             @csrf
@@ -161,7 +153,7 @@
               @endforeach
             </div>
             <div class="flex items-center justify-end pt-2">
-              <button class="px-3 py-1.5 rounded-lg bg-gold-500 text-maroon-900 text-xs font-extrabold hover:bg-gold-400">Simpan</button>
+              <button type="submit" class="px-3 py-1.5 rounded-lg bg-gold-500 text-maroon-900 text-xs font-extrabold hover:bg-gold-400">Simpan</button>
             </div>
           </form>
         </div>
@@ -179,7 +171,6 @@
       📊 Dashboard
     </a>
 
-    {{-- Power BI --}}
     <a href="{{ route('powerbi.sites') }}"
        class="flex items-center justify-between px-3 py-2 rounded-lg transition {{ request()->routeIs('powerbi.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
       <span class="inline-flex items-center gap-2">📈 Dashboards</span>
@@ -198,18 +189,61 @@
         ▶ Buka Dashboards ({{ $activeSite?->code ?? 'pilih site' }})
       </a>
     </div>
+
+    {{-- ADMIN SECTION: tampil untuk GM & Super Admin --}}
+    @if($u && ($isGM || $isSuperAdmin))
+      <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-gold-300/80">Admin</div>
+
+      <a href="{{ route('admin.sites.index') }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.sites.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+        🏞️ Sites
+      </a>
+
+      <a href="{{ route('admin.powerbi.index') }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.powerbi.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+        🧰 Power BI Admin
+      </a>
+
+      <a href="{{ route('admin.divisions.index') }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.divisions.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+        🏢 Divisions
+      </a>
+
+      <a href="{{ route('admin.users.index') }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+        👥 Users
+      </a>
+    @endif
+
+    {{-- SECURITY: Super Admin selalu melihat Audit Log (atau pakai Gate) --}}
+@if($isSuperAdmin || $u->can('view-audit'))
+  <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-gold-300/80">Security</div>
+
+  {{-- Audit — Index --}}
+  <a href="{{ route('admin.audit.index') }}"
+     class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+            {{ request()->routeIs('admin.audit.index') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+    📜 Audit — Index
+  </a>
+
+  {{-- Audit — User (current user) --}}
+  <a href="{{ route('admin.audit.showUser', $u->id) }}"
+     class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+            {{ request()->routeIs('admin.audit.showUser') ? 'bg-gold-500 text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+    👤 Audit — User
+  </a>
+@endif
   </nav>
 
   {{-- LOGOUT --}}
   <div class="border-t border-maroon-700 bg-maroon-900/90 px-4 py-4">
     <form method="POST" action="{{ route('logout') }}">
       @csrf
-      <button class="w-full px-3 py-2 rounded-xl bg-gold-500 text-maroon-900 text-sm font-extrabold hover:bg-gold-400 shadow">
+      <button type="submit" class="w-full px-3 py-2 rounded-xl bg-gold-500 text-maroon-900 text-sm font-extrabold hover:bg-gold-400 shadow">
         <span class="inline-flex items-center gap-2 justify-center">
           Log Out
         </span>
       </button>
     </form>
   </div>
-
 </aside>

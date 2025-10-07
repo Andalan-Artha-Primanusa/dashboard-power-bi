@@ -19,21 +19,28 @@ class SiteAdminController extends Controller
         $only = $request->query('only'); // 'trashed' to show deleted
         $q    = trim((string) $request->query('q'));
 
-        $query = Site::query()->latest();
-        if ($only === 'trashed') $query->onlyTrashed();
-
-        if ($q) {
-            $query->where(function ($w) use ($q) {
-                $w->where('name','like',"%$q%")
-                  ->orWhere('code','like',"%$q%")
-                  ->orWhere('region','like',"%$q%");
-            });
-        }
+        $query = Site::query()
+            ->when($only === 'trashed', fn($qrb) => $qrb->onlyTrashed())
+            ->when($q, function ($w) use ($q) {
+                $w->where(function ($x) use ($q) {
+                    $x->where('name', 'like', "%{$q}%")
+                        ->orWhere('code', 'like', "%{$q}%")
+                        ->orWhere('region', 'like', "%{$q}%");
+                });
+            })
+            // 👉 pakai updated_at biar “realtime feel” setelah update/toggle
+            ->orderByDesc('updated_at')
+            ->orderByDesc('created_at');
 
         $sites = $query->paginate(20)->withQueryString();
 
-        return view('admin.sites.index', compact('sites','only','q'));
+        // 👉 hard no-cache untuk menghindari browser/CDN menahan halaman lama
+        return response()
+            ->view('admin.sites.index', compact('sites', 'only', 'q'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
+
 
     public function create()
     {
@@ -43,14 +50,14 @@ class SiteAdminController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'code'      => ['required','string','max:20','unique:sites,code'],
-            'name'      => ['required','string','max:255'],
-            'region'    => ['nullable','string','max:255'],
-            'address'   => ['nullable','string','max:500'],
-            'lat'       => ['nullable','numeric','between:-90,90'],
-            'lng'       => ['nullable','numeric','between:-180,180'],
-            'is_active' => ['sometimes','boolean'],
-            'config'    => ['nullable','array'],
+            'code'      => ['required', 'string', 'max:20', 'unique:sites,code'],
+            'name'      => ['required', 'string', 'max:255'],
+            'region'    => ['nullable', 'string', 'max:255'],
+            'address'   => ['nullable', 'string', 'max:500'],
+            'lat'       => ['nullable', 'numeric', 'between:-90,90'],
+            'lng'       => ['nullable', 'numeric', 'between:-180,180'],
+            'is_active' => ['sometimes', 'boolean'],
+            'config'    => ['nullable', 'array'],
         ]);
 
         DB::transaction(function () use ($data) {
@@ -67,7 +74,7 @@ class SiteAdminController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.sites.index')->with('success','Site created.');
+        return redirect()->route('admin.sites.index')->with('success', 'Site created.');
     }
 
     public function edit(Site $site)
@@ -78,17 +85,17 @@ class SiteAdminController extends Controller
     public function update(Request $request, Site $site)
     {
         $data = $request->validate([
-            'code'      => ['required','string','max:20','unique:sites,code,'.$site->id.',id'],
-            'name'      => ['required','string','max:255'],
-            'region'    => ['nullable','string','max:255'],
-            'address'   => ['nullable','string','max:500'],
-            'lat'       => ['nullable','numeric','between:-90,90'],
-            'lng'       => ['nullable','numeric','between:-180,180'],
-            'is_active' => ['sometimes','boolean'],
-            'config'    => ['nullable','array'],
+            'code'      => ['required', 'string', 'max:20', 'unique:sites,code,' . $site->id . ',id'],
+            'name'      => ['required', 'string', 'max:255'],
+            'region'    => ['nullable', 'string', 'max:255'],
+            'address'   => ['nullable', 'string', 'max:500'],
+            'lat'       => ['nullable', 'numeric', 'between:-90,90'],
+            'lng'       => ['nullable', 'numeric', 'between:-180,180'],
+            'is_active' => ['sometimes', 'boolean'],
+            'config'    => ['nullable', 'array'],
         ]);
 
-        DB::transaction(function () use ($data,$site) {
+        DB::transaction(function () use ($data, $site) {
             $site->update([
                 'code'      => $data['code'],
                 'name'      => $data['name'],
@@ -101,32 +108,32 @@ class SiteAdminController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.sites.index')->with('success','Site updated.');
+        return redirect()->route('admin.sites.index')->with('success', 'Site updated.');
     }
 
     public function destroy(Site $site)
     {
         $site->delete();
-        return back()->with('success','Site deleted.');
+        return back()->with('success', 'Site deleted.');
     }
 
     public function restore(string $id)
     {
         $site = Site::onlyTrashed()->findOrFail($id);
         $site->restore();
-        return back()->with('success','Site restored.');
+        return back()->with('success', 'Site restored.');
     }
 
     public function forceDelete(string $id)
     {
         $site = Site::onlyTrashed()->findOrFail($id);
         $site->forceDelete();
-        return back()->with('success','Site permanently deleted.');
+        return back()->with('success', 'Site permanently deleted.');
     }
 
     public function toggleActive(Site $site)
     {
         $site->update(['is_active' => ! (bool) $site->is_active]);
-        return back()->with('success','Site status toggled.');
+        return back()->with('success', 'Site status toggled.');
     }
 }

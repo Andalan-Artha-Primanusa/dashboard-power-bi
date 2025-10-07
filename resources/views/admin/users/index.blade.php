@@ -124,6 +124,7 @@
                     <th class="px-4 py-3 text-left">Nama</th>
                     <th class="px-4 py-3 text-left">Email</th>
                     <th class="px-4 py-3 text-left">Divisi</th>
+                    <th class="px-4 py-3 text-left">Site</th> {{-- NEW --}}
                     <th class="px-4 py-3 text-left">Role</th>
                     <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
@@ -141,6 +142,18 @@
                         </span>
                         @else
                         <span class="text-slate-400">-</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3">
+                        @if($u->defaultSite)
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-sky-100 text-sky-700 ring-1 ring-sky-200">
+                            {{ $u->defaultSite->code }} — {{ $u->defaultSite->name }}
+                            @if($u->defaultSite->region)
+                              <span class="ml-1 text-[10px] text-sky-700/80">({{ $u->defaultSite->region }})</span>
+                            @endif
+                          </span>
+                        @else
+                          <span class="text-slate-400">-</span>
                         @endif
                     </td>
                     <td class="px-4 py-3">
@@ -332,7 +345,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-4 py-16">
+                    <td colspan="6" class="px-4 py-16"> {{-- was 5; now 6 because Site col added --}}
                         <div class="mx-auto max-w-md text-center">
                             <div class="mx-auto h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center">
                                 <svg class="h-6 w-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -365,11 +378,21 @@
                 <div>
                     <div class="font-semibold text-slate-900">{{ $u->name }}</div>
                     <div class="text-xs text-slate-500">{{ $u->email }}</div>
-                    <div class="mt-1 text-xs">
+                    <div class="mt-1 text-xs space-x-1 space-y-1">
                         <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">{{ $u->division->name ?? '-' }}</span>
                         <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
                             {{ is_string($u->role ?? null) ? ucfirst($u->role) : (optional($u->role)->name ?? '-') }}
                         </span>
+                        @if($u->defaultSite)
+                          <span class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">
+                            {{ $u->defaultSite->code }} — {{ $u->defaultSite->name }}
+                            @if($u->defaultSite->region)
+                              <span class="text-[10px] opacity-80">({{ $u->defaultSite->region }})</span>
+                            @endif
+                          </span>
+                        @else
+                          <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">No Site</span>
+                        @endif
                     </div>
                 </div>
                 <div class="text-right space-y-2">
