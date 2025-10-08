@@ -1,14 +1,10 @@
-{{-- resources/views/admin/audit/index.blade.php --}}
 @extends('layouts.app')
-
-@section('title','Audit Log')
+@section('title','Audit — Semua Log')
 
 @section('content')
-@php use Illuminate\Support\Str; @endphp
+<div class="rounded-3xl overflow-hidden shadow ring-1 ring-slate-200 bg-white">
 
-<div x-data="auditLogIndex()" class="rounded-3xl shadow ring-1 ring-slate-200 bg-white overflow-hidden">
-
-  {{-- HEADER (maroon-only • serumpun) --}}
+  {{-- HEADER (maroon-only • konsisten ARCA) --}}
   <div class="px-6 py-7 text-white relative overflow-hidden">
     {{-- Base gradient --}}
     <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600"></div>
@@ -17,178 +13,113 @@
     {{-- Soft overlay --}}
     <div class="absolute -top-16 -right-16 size-64 rounded-full bg-white/10 blur-3xl"></div>
 
-    <div class="relative">
-      <h1 class="text-2xl font-bold tracking-tight">ARCA</h1>
-      <p class="text-white/85 text-sm mt-1">Semua aktivitas sistem</p>
+    <div class="relative flex items-start sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">🕵️ Audit Log — Semua User</h1>
+        <p class="text-white/85 text-sm mt-1">Riwayat aktivitas gabungan. Gunakan pencarian & filter di bawah.</p>
+      </div>
+      <a href="{{ route('admin.audit.export', ['q'=>request('q'),'action'=>request('action')]) }}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow bg-white text-maroon-900 ring-1 ring-white/20">
+        Export CSV
+      </a>
     </div>
   </div>
 
-  {{-- TOOLBAR (serumpun) --}}
+  {{-- FILTER BAR (seragam) --}}
   <div class="px-6 py-4 border-b bg-white">
-    <form method="GET" class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-center">
-      {{-- Search --}}
-      <div class="sm:col-span-6 relative">
-        <input type="text" name="q" value="{{ request('q') }}"
-               placeholder="Cari aksi, IP, user agent, dll…"
-               class="w-full rounded-xl border-slate-300 pl-10 pr-3 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700">
+    <form method="GET" class="grid gap-3 sm:grid-cols-12 items-center">
+      <label class="sm:col-span-6 relative">
+        <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="Cari user/action/deskripsi…"
+               class="w-full rounded-xl border-slate-300 pl-10 pr-3 py-2.5 focus:ring-maroon-700 focus:border-maroon-700" />
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <circle cx="11" cy="11" r="7"/><path d="m21 21-3.5-3.5"/>
         </svg>
-      </div>
+      </label>
 
-      {{-- Action filter --}}
-      <div class="sm:col-span-3">
-        @php $aksi = request('action'); @endphp
+      <div class="sm:col-span-4">
         <select name="action"
-                class="w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700">
-          <option value="">Semua Aksi</option>
-          @foreach($logs->pluck('action')->filter()->unique()->sort() as $act)
-            <option value="{{ $act }}" @selected($aksi===$act)>{{ Str::upper($act) }}</option>
+                class="w-full rounded-xl border-slate-300 px-3 py-2.5 focus:ring-maroon-700 focus:border-maroon-700">
+          <option value="">Semua action</option>
+          @foreach($actions as $ac)
+            <option value="{{ $ac }}" @selected(($action ?? '')===$ac)>{{ $ac }}</option>
           @endforeach
         </select>
       </div>
 
-      {{-- Sort --}}
-      <div class="sm:col-span-2">
-        @php $sort = request('sort','desc'); @endphp
-        <select name="sort"
-                class="w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700">
-          <option value="desc" @selected($sort==='desc')>Terbaru dulu</option>
-          <option value="asc"  @selected($sort==='asc')>Terlama dulu</option>
-        </select>
-      </div>
-
-      {{-- Apply --}}
-      <div class="sm:col-span-1 sm:justify-self-end">
-        <button class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-maroon-700 text-white text-sm font-semibold hover:bg-maroon-800 ring-1 ring-maroon-900/20">
+      <div class="sm:col-span-2 sm:justify-self-end flex gap-2">
+        <button class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-maroon-700 text-white font-medium hover:bg-maroon-800 ring-1 ring-maroon-900/20">
           Terapkan
         </button>
+        @if(($q ?? null) || ($action ?? null))
+          <a href="{{ route('admin.audit.index') }}"
+             class="inline-flex items-center justify-center px-3 py-2 rounded-xl text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+            Reset
+          </a>
+        @endif
       </div>
     </form>
   </div>
 
-  {{-- LIST / TIMELINE --}}
-  <div class="w-full px-4 sm:px-6 py-5">
-    <div class="space-y-3">
-      @forelse($logs as $log)
-        @php
-          $ts  = \Illuminate\Support\Carbon::parse($log->created_at);
-          $rel = $ts->diffForHumans();
-
-          $raw = is_string($log->payload) ? $log->payload : json_encode($log->payload, JSON_UNESCAPED_SLASHES);
-          $arr = json_decode($raw, true);
-          $pretty = json_last_error() === JSON_ERROR_NONE
-            ? json_encode($arr, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES)
-            : ($raw ?? '');
-
-          $ua  = data_get($arr,'user_agent');
-          $ip  = data_get($arr,'ip') ?? data_get($log,'ip');
-
-          $action = strtoupper($log->action ?? '-');
-
-          // Badges: maroon/slate for neutral, rose for destructive (serumpun dgn halaman lain)
-          $badge  = match(true) {
-            str_contains($action,'LOGIN')  => 'bg-maroon-50 text-maroon-900 ring-maroon-200',
-            str_contains($action,'LOGOUT') => 'bg-slate-100 text-slate-800 ring-slate-200',
-            str_contains($action,'CREATE') => 'bg-maroon-50 text-maroon-900 ring-maroon-200',
-            str_contains($action,'UPDATE') => 'bg-maroon-50 text-maroon-900 ring-maroon-200',
-            str_contains($action,'DELETE') => 'bg-rose-100 text-rose-800 ring-rose-200',
-            default                        => 'bg-slate-100 text-slate-800 ring-slate-200',
-          };
-        @endphp
-
-        <div x-data="{ open:false }"
-             class="rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition overflow-hidden">
-          <div class="grid grid-cols-1 sm:grid-cols-6 lg:grid-cols-12 gap-3 sm:gap-4 items-start px-4 sm:px-5 py-3 sm:py-4">
-
-            {{-- waktu --}}
-            <div class="lg:col-span-3 sm:col-span-2">
-              <div class="text-sm sm:text-base font-semibold text-slate-900">{{ $rel }}</div>
-              <div class="text-xs text-slate-500">{{ $ts->format('Y-m-d H:i:s') }}</div>
-            </div>
-
-            {{-- user --}}
-            <div class="lg:col-span-3 sm:col-span-2">
-              @if($log->causer_id)
-                <a href="{{ route('admin.audit.showUser',$log->causer_id) }}"
-                   class="text-maroon-700 font-semibold hover:underline break-all">
-                  User #{{ $log->causer_id }}
-                </a>
-              @else
-                <span class="text-slate-500">—</span>
-              @endif
-              @if($ip)
-                <div class="text-xs text-slate-500 mt-0.5">IP {{ $ip }}</div>
-              @endif
-              @if($ua)
-                <div class="text-xs text-slate-500 mt-0.5 break-words sm:truncate sm:max-w-[320px]">
-                  {{ Str::limit($ua, 110) }}
-                </div>
-              @endif
-            </div>
-
-            {{-- aksi --}}
-            <div class="lg:col-span-3 sm:col-span-2">
-              <span class="inline-flex items-center text-[11px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ring-1 {{ $badge }}">
-                {{ $action }}
+  {{-- TABLE (desktop) --}}
+  <div class="p-6 overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-slate-600 text-xs font-semibold uppercase border-b">
+        <tr>
+          <th class="px-4 py-3 text-left">Waktu</th>
+          <th class="px-4 py-3 text-left">User</th>
+          <th class="px-4 py-3 text-left">Action</th>
+          <th class="px-4 py-3 text-left">Subject</th>
+          <th class="px-4 py-3 text-left">Payload</th>
+          <th class="px-4 py-3 text-left">IP</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+        @forelse ($logs as $l)
+          @php
+            $actionTxt = strtoupper($l->action ?? '—');
+            $badge = match(true){
+              str_contains($actionTxt,'DELETE') => 'bg-rose-100 text-rose-700 ring-rose-200',
+              str_contains($actionTxt,'LOGIN') || str_contains($actionTxt,'CREATE') || str_contains($actionTxt,'UPDATE')
+                                                => 'bg-maroon-50 text-maroon-900 ring-maroon-200',
+              default => 'bg-slate-100 text-slate-700 ring-slate-200',
+            };
+          @endphp
+          <tr class="hover:bg-slate-50 align-top">
+            <td class="px-4 py-3 whitespace-nowrap">
+              <div class="font-medium text-slate-800">{{ optional($l->created_at)->format('Y-m-d H:i') }}</div>
+              <div class="text-xs text-slate-500">{{ optional($l->created_at)->diffForHumans() }}</div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-semibold text-slate-900">{{ $l->causer->name ?? '—' }}</div>
+              <div class="text-xs text-slate-500">{{ $l->causer->email ?? '' }}</div>
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ring-1 {{ $badge }}">
+                {{ $actionTxt }}
               </span>
-              @if($log->subject_type || $log->subject_id)
-                <div class="text-xs text-slate-500 mt-1 break-words">
-                  {{ class_basename($log->subject_type) ?? '-' }} <span class="text-slate-400">#</span>{{ $log->subject_id ?? '-' }}
-                </div>
-              @endif
-            </div>
-
-            {{-- tombol detail (primary maroon, serumpun) --}}
-            <div class="lg:col-span-3 sm:col-span-6">
-              <div class="sm:text-right">
-                <button @click="open=!open"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-maroon-700 text-white text-xs font-semibold hover:bg-maroon-800 ring-1 ring-maroon-900/20">
-                  Detail
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {{-- panel payload --}}
-          <div x-show="open" x-collapse class="px-4 sm:px-5 pb-4 sm:pb-5">
-            <div class="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden">
-              <div class="px-3 py-2 bg-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div class="text-xs font-semibold text-slate-600">Payload</div>
-                <div class="flex items-center gap-2">
-                  <button @click="copyText($refs.raw{{ $log->id }})"
-                          class="text-xs px-2 py-1 rounded-md bg-white ring-1 ring-slate-300 hover:bg-slate-50">
-                    Copy
-                  </button>
-                </div>
-              </div>
-              <pre class="p-3 text-[12px] leading-relaxed text-slate-800 overflow-x-auto whitespace-pre">{{ $pretty }}</pre>
-              <textarea x-ref="raw{{ $log->id }}" class="sr-only">{{ $raw }}</textarea>
-            </div>
-          </div>
-        </div>
-      @empty
-        <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
-          Belum ada log.
-        </div>
-      @endforelse
-    </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-medium text-slate-800">{{ class_basename($l->subject_type ?? '—') }}</div>
+              <div class="text-xs text-slate-500">ID: {{ $l->subject_id ?? '—' }}</div>
+            </td>
+            <td class="px-4 py-3">
+              <pre class="text-[12px] leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-2 max-w-xl overflow-x-auto whitespace-pre">
+{{ is_string($l->payload ?? null) ? $l->payload : json_encode($l->payload, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES) }}
+              </pre>
+            </td>
+            <td class="px-4 py-3 text-xs text-slate-600">{{ $l->ip ?? '—' }}</td>
+          </tr>
+        @empty
+          <tr>
+            <td colspan="6" class="px-4 py-12 text-center text-slate-500">Belum ada log ditemukan.</td>
+          </tr>
+        @endforelse
+      </tbody>
+    </table>
 
     <div class="mt-5">
-      {{ $logs->appends(request()->query())->links() }}
+      {{ $logs->links() }}
     </div>
   </div>
 </div>
-
-<script>
-function auditLogIndex(){
-  return {
-    copyText(el){
-      const v = el?.value ?? el?.textContent ?? '';
-      if (!v) return;
-      navigator.clipboard.writeText(v);
-    }
-  }
-}
-</script>
 @endsection

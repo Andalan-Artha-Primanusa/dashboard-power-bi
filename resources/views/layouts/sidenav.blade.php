@@ -1,69 +1,75 @@
 {{-- resources/views/layouts/sidenav.blade.php --}}
 <aside class="w-72 bg-maroon-800 text-white flex flex-col h-full">
   @php
-  use Illuminate\Support\Str;
-  use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Str;
+    use Illuminate\Support\Facades\Auth;
 
-  // ====== user & role mapping ======
-  $u = Auth::user();
-  try { $u?->loadMissing('role'); } catch (\Throwable $e) {}
+    // ====== user & role mapping ======
+    $u = Auth::user();
+    try { $u?->loadMissing('role'); } catch (\Throwable $e) {}
 
-  $rawRole = $u->role->key
-  ?? $u->role->slug
-  ?? $u->role->name
-  ?? (is_string($u->role ?? null) ? $u->role : '')
-  ?? '';
-  $norm = Str::of($rawRole)->lower()->replace(['_', '-'], ' ')->squish()->toString();
-  $roleMap = [
-    'general manager' => 'gm',
-    'generalmanager'  => 'gm',
-    'gm'              => 'gm',
-    'mgr'             => 'manager',
-    'manager'         => 'manager',
-    'super admin'     => 'super_admin',
-    'superadmin'      => 'super_admin',
-    'sa'              => 'super_admin',
-    'root'            => 'super_admin',
-  ];
-  $roleKey      = $roleMap[$norm] ?? $norm;
-  $isGM         = $roleKey === 'gm';
-  $isSuperAdmin = $roleKey === 'super_admin';
-  $displayRole  = $isSuperAdmin ? 'Super Admin' : (Str::title($roleKey ?: 'User'));
+    $rawRole = $u?->role?->key
+            ?? $u?->role?->slug
+            ?? $u?->role?->name
+            ?? (is_string($u->role ?? null) ? $u->role : '')
+            ?? '';
+    $norm = Str::of($rawRole)->lower()->replace(['_', '-'], ' ')->squish()->toString();
+    $roleMap = [
+      'general manager' => 'gm',
+      'generalmanager'  => 'gm',
+      'gm'              => 'gm',
+      'mgr'             => 'manager',
+      'manager'         => 'manager',
+      'super admin'     => 'super_admin',
+      'superadmin'      => 'super_admin',
+      'sa'              => 'super_admin',
+      'root'            => 'super_admin',
+    ];
+    $roleKey      = $roleMap[$norm] ?? $norm;
+    $isGM         = $roleKey === 'gm';
+    $isSuperAdmin = $roleKey === 'super_admin';
+    $displayRole  = $isSuperAdmin ? 'Super Admin' : (Str::title($roleKey ?: 'User'));
 
-  // ====== user info ======
-  $name     = $u->name ?? 'User';
-  $email    = $u->email ?? '';
-  $photo    = property_exists($u,'profile_photo_url') && $u->profile_photo_url ? $u->profile_photo_url : null;
-  $initials = collect(preg_split('/\s+/', trim($name)))->filter()->map(fn($p)=>Str::upper(Str::substr($p,0,1)))->take(2)->implode('') ?: 'U';
+    // ====== user info ======
+    $name  = $u?->name ?? 'User';
+    $email = $u?->email ?? '';
 
-  // ====== model Site (optional) ======
-  try { $hasSiteModel = class_exists(\App\Models\Site::class); } catch (\Throwable $e) { $hasSiteModel = false; }
-  if ($hasSiteModel) { $SiteClass = \App\Models\Site::class; }
+    // Foto: urutan fallback -> profile_photo_url (Jetstream) -> accessor photo_url -> storage/photo_path -> null
+    $photo = $u?->profile_photo_url
+          ?? ($u?->photo_url ?? ($u?->photo_path ? asset('storage/'.$u->photo_path) : null));
 
-  // ====== site aktif & switching rules ======
-  $activeSiteId = session('site_id') ?? ($u->default_site_id ?? null);
+    $initials = collect(preg_split('/\s+/', trim($name)))
+                  ->filter()
+                  ->map(fn($p)=>Str::upper(Str::substr($p,0,1)))
+                  ->take(2)->implode('') ?: 'U';
 
-  // Non-GM/SA snap ke default kalau belum ada di session
-  if (!$isGM && !$isSuperAdmin && empty(session('site_id')) && !empty($u->default_site_id)) {
-    session(['site_id' => $u->default_site_id]);
-    $activeSiteId = $u->default_site_id;
-  }
+    // ====== model Site (optional) ======
+    try { $hasSiteModel = class_exists(\App\Models\Site::class); } catch (\Throwable $e) { $hasSiteModel = false; }
+    if ($hasSiteModel) { $SiteClass = \App\Models\Site::class; }
 
-  $activeSite = null;
-  if ($hasSiteModel && $activeSiteId) {
-    try { $activeSite = $SiteClass::find($activeSiteId); } catch (\Throwable $e) {}
-  }
-  $siteLabel = $activeSite ? (($activeSite->code ?? 'SITE').' — '.($activeSite->name ?? '')) : 'Belum memilih site';
+    // ====== site aktif & switching rules ======
+    $activeSiteId = session('site_id') ?? ($u?->default_site_id ?? null);
 
-  // daftar site untuk switch (GM & SA bisa)
-  $allowedSites = collect();
-  if ($hasSiteModel && ($isGM || $isSuperAdmin)) {
-    try {
-      $q = method_exists($SiteClass,'active') ? $SiteClass::active() : $SiteClass::query()->where('is_active',true);
-      $allowedSites = $q->orderBy('name')->get();
-    } catch (\Throwable $e) {}
-  }
-  $canSwitchSite = ($isGM || $isSuperAdmin) && $allowedSites->isNotEmpty();
+    if ($u && !$isGM && !$isSuperAdmin && empty(session('site_id')) && !empty($u->default_site_id)) {
+      try { session(['site_id' => $u->default_site_id]); } catch (\Throwable $e) {}
+      $activeSiteId = $u->default_site_id;
+    }
+
+    $activeSite = null;
+    if ($hasSiteModel && $activeSiteId) {
+      try { $activeSite = $SiteClass::find($activeSiteId); } catch (\Throwable $e) {}
+    }
+    $siteLabel = $activeSite ? (($activeSite->code ?? 'SITE').' — '.($activeSite->name ?? '')) : 'Belum memilih site';
+
+    // daftar site untuk switch (GM & SA bisa)
+    $allowedSites = collect();
+    if ($hasSiteModel && ($isGM || $isSuperAdmin)) {
+      try {
+        $q = method_exists($SiteClass,'active') ? $SiteClass::active() : $SiteClass::query()->where('is_active',true);
+        $allowedSites = $q->orderBy('name')->get();
+      } catch (\Throwable $e) {}
+    }
+    $canSwitchSite = ($isGM || $isSuperAdmin) && $allowedSites->isNotEmpty();
   @endphp
 
   {{-- HEADER --}}
@@ -130,7 +136,7 @@
 
         @if($canSwitchSite)
           <button type="button" @click="openSwitch = !openSwitch"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-maroon-900 text-xs font-extrabold hover:bg-white/90 shadow">
+                  class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-maroon-900 text-xs font-extrabold hover:bg-white/90 shadow">
             Ganti
           </button>
         @endif
@@ -217,21 +223,20 @@
       </a>
     @endif
 
-    {{-- SECURITY: Super Admin selalu melihat Audit Log (atau pakai Gate) --}}
-    @if($isSuperAdmin || $u->can('view-audit'))
+    {{-- SECURITY: Super Admin atau user yang punya izin --}}
+    @if(($u && $isSuperAdmin) || ($u && method_exists($u,'can') && $u->can('view-audit')))
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-white/70">Security</div>
 
-      {{-- Audit — Index --}}
       <a href="{{ route('admin.audit.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
                 {{ request()->routeIs('admin.audit.index') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         📜 Audit — Index
       </a>
 
-      {{-- Audit — User (current user) --}}
-      <a href="{{ route('admin.audit.showUser', $u->id) }}"
+      {{-- ke halaman log per user (current user) --}}
+      <a href="{{ route('admin.audit.user', $u?->id) }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
-                {{ request()->routeIs('admin.audit.showUser') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+                {{ request()->routeIs('admin.audit.user') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         👤 Audit — User
       </a>
     @endif

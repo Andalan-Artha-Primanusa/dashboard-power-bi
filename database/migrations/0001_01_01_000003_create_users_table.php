@@ -8,18 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // USERS (terintegrasi langsung dgn divisions & sites)
+        // USERS
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            // Org & Site (FK langsung di sini)
+            // Org & Site
             $table->foreignUuid('division_id')->nullable()
                   ->constrained('divisions')->nullOnDelete();
 
             $table->foreignUuid('default_site_id')->nullable()
                   ->constrained('sites')->nullOnDelete();
 
-            $table->json('allowed_site_ids')->nullable(); // cast di Model -> array
+            $table->json('allowed_site_ids')->nullable();
 
             // Identity
             $table->string('name');
@@ -27,6 +27,11 @@ return new class extends Migration
             $table->string('role', 50)->nullable()->index();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+
+            // === Tambahan Foto / Avatar ===
+            $table->string('photo_path')->nullable()
+                  ->comment('Path atau URL foto profil user');
+
             $table->rememberToken();
             $table->timestamps();
         });
@@ -41,14 +46,14 @@ return new class extends Migration
         // SESSIONS
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->uuid('user_id')->nullable()->index(); // match UUID users.id
+            $table->uuid('user_id')->nullable()->index();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->unsignedInteger('last_activity')->index();
         });
 
-        // PIVOT AKSES SITE <-> USER (opsi kontrol akses granular)
+        // PIVOT
         if (!Schema::hasTable('site_user')) {
             Schema::create('site_user', function (Blueprint $table) {
                 $table->uuid('site_id');
@@ -66,7 +71,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('site_user');            // drop pivot dulu
+        Schema::dropIfExists('site_user');
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('users');

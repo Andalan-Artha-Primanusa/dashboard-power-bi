@@ -186,12 +186,19 @@ Route::middleware('auth')->group(function () {
     */
     Route::prefix('admin/audit')
         ->name('admin.audit.')
-        ->middleware('role:super_admin')
+        ->middleware(['auth', 'role:super_admin']) // tambahkan auth kalau perlu
         ->group(function () {
-            Route::get('/',                    [AuditLogController::class, 'index'])->name('index');
-            Route::get('/users/{user}',        [AuditLogController::class, 'showUser'])->name('showUser');
-            Route::get('/export/csv',          [AuditLogController::class, 'exportCsv'])->name('exportCsv');
-            Route::get('/users/{user}/export', [AuditLogController::class, 'exportUserCsv'])->name('exportUserCsv');
+            // /admin/audit  →  admin.audit.index
+            Route::get('/', [AuditLogController::class, 'index'])->name('index');
+
+            // /admin/audit/users/{user}  →  admin.audit.user
+            Route::get('/users/{user}', [AuditLogController::class, 'showUser'])->name('user');
+
+            // /admin/audit/export.csv  →  admin.audit.export
+            Route::get('/export.csv', [AuditLogController::class, 'exportCsv'])->name('export');
+
+            // /admin/audit/users/{user}/export.csv  →  admin.audit.user.export
+            Route::get('/users/{user}/export.csv', [AuditLogController::class, 'exportUserCsv'])->name('user.export');
         });
 });
 

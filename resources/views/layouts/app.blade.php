@@ -22,6 +22,11 @@
   <style>[x-cloak]{ display:none !important; }</style>
 </head>
 <body class="font-sans antialiased bg-gray-100">
+  @php
+    // Fallback agar $errors selalu ada
+    /** @var \Illuminate\Support\ViewErrorBag $errors */
+    $errors = $errors ?? session('errors', new \Illuminate\Support\ViewErrorBag);
+  @endphp
 
   {{-- Mobile topbar --}}
   <div class="lg:hidden sticky top-0 z-40 bg-maroon-800 text-gold-200 border-b border-maroon-700">
@@ -47,10 +52,7 @@
     {{-- Sidebar (mobile slide-over) --}}
     <div class="lg:hidden">
       <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-50">
-        {{-- Backdrop --}}
         <div class="absolute inset-0 bg-black/30" @click="$dispatch('close-sidebar')" aria-hidden="true"></div>
-
-        {{-- Panel --}}
         <div class="absolute inset-y-0 left-0 w-72">
           <div class="h-full shadow-xl bg-maroon-800">
             @include('layouts.sidenav', ['mobile' => true])
