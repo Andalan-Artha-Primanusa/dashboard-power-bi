@@ -16,31 +16,31 @@
 
 <div class="rounded-3xl shadow ring-1 ring-slate-200 bg-white overflow-hidden">
 
-  {{-- HEADER (Maroon • Emas) --}}
+  {{-- HEADER (Maroon-only • serumpun) --}}
   <div class="px-6 py-7 text-white relative overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-amber-500"></div>
-    <div class="absolute inset-0 opacity-25 bg-[radial-gradient(70%_70%_at_10%_10%,_rgba(255,215,128,0.6)_0%,_transparent_60%)]"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600"></div>
+    <div class="absolute inset-0 opacity-25 bg-[radial-gradient(70%_70%_at_10%_10%,_rgba(255,255,255,0.5)_0%,_transparent_60%)]"></div>
     <div class="absolute -top-16 -right-16 size-64 rounded-full bg-white/10 blur-3xl"></div>
 
     <div class="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div class="text-white">
-        <h1 class="text-2xl font-bold tracking-tight">👥 Manajemen User</h1>
+        <h1 class="text-2xl font-bold tracking-tight">ARCA</h1>
         <p class="text-sm text-white/85 mt-1">Kelola akun, role, divisi, dan site.</p>
       </div>
       <a href="{{ route('admin.users.create') }}"
-         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow bg-amber-400 text-maroon-900 ring-1 ring-white/20">
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow bg-white text-maroon-900 ring-1 ring-white/20">
         ➕ Tambah User
       </a>
     </div>
   </div>
 
-  {{-- TOOLBAR FILTER (Maroon • Emas, seragam dengan halaman lain) --}}
+  {{-- FILTER BAR (serumpun) --}}
   <div class="px-6 py-4 border-b bg-white">
     <form method="GET" class="grid gap-3 sm:grid-cols-12 items-center">
       {{-- Search --}}
       <label class="sm:col-span-4 relative">
         <input name="q" value="{{ $q }}" placeholder="Cari nama atau email…"
-               class="w-full rounded-xl border-slate-300 pl-10 pr-3 py-2.5 focus:ring-maroon-700 focus:border-maroon-700" />
+               class="w-full rounded-xl border-slate-300 pl-10 pr-3 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700" />
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <circle cx="11" cy="11" r="7"/><path d="m21 21-3.5-3.5"/>
         </svg>
@@ -49,7 +49,7 @@
       {{-- Division --}}
       <div class="sm:col-span-3">
         <select name="division_id"
-                class="w-full rounded-xl border-slate-300 px-3 py-2.5 focus:ring-maroon-700 focus:border-maroon-700">
+                class="w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700">
           <option value="">Semua Divisi</option>
           @foreach($divisions as $d)
             <option value="{{ $d->id }}" {{ (string)$divId===(string)$d->id?'selected':'' }}>{{ $d->name }}</option>
@@ -60,7 +60,7 @@
       {{-- Role --}}
       <div class="sm:col-span-3">
         <select name="role"
-                class="w-full rounded-xl border-slate-300 px-3 py-2.5 focus:ring-maroon-700 focus:border-maroon-700">
+                class="w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700">
           <option value="">Semua Role</option>
           @foreach($roles as $rk => $rname)
             @php $val = is_int($rk) ? $rname : $rk; $label = is_int($rk) ? ucfirst($rname) : $rname; @endphp
@@ -72,7 +72,7 @@
       {{-- Site --}}
       <div class="sm:col-span-2">
         <select name="site_id"
-                class="w-full rounded-xl border-slate-300 px-3 py-2.5 focus:ring-maroon-700 focus:border-maroon-700">
+                class="w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700">
           <option value="">Semua Site</option>
           @foreach($sites as $s)
             <option value="{{ $s->id }}" {{ (string)$siteId===(string)$s->id?'selected':'' }}>
@@ -83,28 +83,28 @@
       </div>
 
       <div class="sm:col-span-12 sm:justify-self-end">
-        <button class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-maroon-700 text-white font-medium hover:bg-maroon-800 ring-1 ring-maroon-900/20">
+        <button class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-maroon-700 text-white text-sm font-semibold hover:bg-maroon-800 ring-1 ring-maroon-900/20">
           Terapkan
         </button>
       </div>
     </form>
   </div>
 
-  {{-- ALERTS (prioritas) --}}
+  {{-- ALERTS (seragam) --}}
   @php
     $hasPwd   = session()->has('generated_password');
-    $statusMsg= session('status');
+    $statusMsg= session('status') ?? session('message');
     $errs     = $errors->any() ? $errors->all() : [];
   @endphp
   <div class="px-6 pt-5">
     @if ($hasPwd)
       <div x-data="{open:true, copied:false}" x-show="open" x-transition
-           class="relative mb-4 overflow-hidden rounded-2xl bg-white ring-1 ring-amber-300 shadow-[inset_0_0_0_1px_#f6c74d]">
-        <div class="bg-gradient-to-r from-maroon-800 via-maroon-700 to-amber-500 px-4 py-2 text-white text-xs font-semibold tracking-wide">
+           class="relative mb-4 overflow-hidden rounded-2xl bg-white ring-1 ring-maroon-200 shadow-[inset_0_0_0_1px_rgba(128,0,32,0.15)]">
+        <div class="bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600 px-4 py-2 text-white text-xs font-semibold tracking-wide">
           🔐 Password Baru — tampil sekali, segera salin
         </div>
         <div class="p-4 flex items-start gap-3">
-          <svg class="h-5 w-5 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <svg class="h-5 w-5 text-maroon-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-width="2" d="M12 9v4m0 4h.01"/><circle cx="12" cy="12" r="10" stroke-width="2"/>
           </svg>
           <div class="text-sm text-slate-800">
@@ -120,7 +120,7 @@
                   <rect x="9" y="9" width="13" height="13" rx="2"/><rect x="2" y="2" width="13" height="13" rx="2"/>
                 </svg>
                 <span x-show="!copied">Copy</span>
-                <span x-show="copied" class="text-emerald-700">Copied!</span>
+                <span x-show="copied" class="text-maroon-700">Copied!</span>
               </button>
             </div>
             <p class="mt-1 text-xs text-slate-500">Jangan simpan di log. Minta user ganti password setelah login.</p>
@@ -132,17 +132,17 @@
       </div>
     @elseif ($statusMsg)
       <div x-data="{open:true}" x-show="open" x-transition
-           class="relative mb-4 rounded-2xl border border-amber-200 bg-amber-50/70 ring-1 ring-amber-100 shadow-sm">
+           class="relative mb-4 rounded-2xl border border-maroon-200 bg-maroon-50/70 ring-1 ring-maroon-100 shadow-sm">
         <div class="flex items-start gap-3 p-4">
-          <svg class="h-5 w-5 text-amber-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <svg class="h-5 w-5 text-maroon-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-width="2" d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>
           </svg>
           <div class="text-sm text-maroon-900">{{ $statusMsg }}</div>
-          <button @click="open=false" class="ml-auto rounded-lg p-1.5 text-maroon-800/80 hover:bg-amber-100/60">
+          <button @click="open=false" class="ml-auto rounded-lg p-1.5 text-maroon-800/80 hover:bg-maroon-100/60">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
-        <div class="h-1 w-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600"></div>
+        <div class="h-1 w-full bg-gradient-to-r from-maroon-600 via-maroon-500 to-maroon-700"></div>
       </div>
     @elseif (!empty($errs))
       <div x-data="{open:true}" x-show="open" x-transition
@@ -166,7 +166,7 @@
     @endif
   </div>
 
-  {{-- TABLE (desktop) --}}
+  {{-- TABLE (desktop • seragam) --}}
   <div class="hidden md:block p-6 overflow-x-auto">
     <table class="min-w-full text-sm">
       <thead class="sticky top-0 bg-slate-50 text-slate-600 text-xs font-semibold uppercase border-b">
@@ -181,12 +181,13 @@
       </thead>
       <tbody class="divide-y divide-slate-200">
         @forelse($users as $u)
-        <tr class="hover:bg-slate-50" x-data="{open:false, confirmReset:false, confirmDelete:false}">
-          <td class="px-4 py-3">{{ $u->name }}</td>
+        <tr class="hover:bg-slate-50"
+            x-data="{open:false, confirmReset:false, confirmDelete:false}">
+          <td class="px-4 py-3 text-slate-900">{{ $u->name }}</td>
           <td class="px-4 py-3 text-slate-700">{{ $u->email }}</td>
           <td class="px-4 py-3">
             @if($u->division)
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-800 ring-1 ring-amber-200">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700 ring-1 ring-slate-200">
                 {{ $u->division->name }}
               </span>
             @else
@@ -195,7 +196,7 @@
           </td>
           <td class="px-4 py-3">
             @if($u->defaultSite)
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-amber-50 text-maroon-900 ring-1 ring-amber-200">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-maroon-900 ring-1 ring-slate-200">
                 {{ $u->defaultSite->code }} — {{ $u->defaultSite->name }}
                 @if($u->defaultSite->region)
                   <span class="ml-1 text-[10px] text-maroon-800/75">({{ $u->defaultSite->region }})</span>
@@ -210,7 +211,9 @@
               {{ is_string($u->role ?? null) ? ucfirst($u->role) : (optional($u->role)->name ?? '-') }}
             </span>
           </td>
+
           <td class="px-4 py-3 text-right">
+            {{-- Actions (seragam dropdown) --}}
             <div class="relative inline-block text-left">
               <button @click="open=!open"
                       class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold ring-1 ring-slate-200">
@@ -218,28 +221,24 @@
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </button>
 
-              {{-- dropdown --}}
               <div x-cloak x-show="open" @click.outside="open=false"
                    class="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-slate-200 bg-white shadow-lg p-1 text-sm">
                 <a href="{{ route('admin.users.edit',$u) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-50">✏️ Edit</a>
                 <button type="button" @click="open=false; confirmReset=true"
-                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-amber-50 text-amber-700">
-                  🔐 Reset Password
-                </button>
+                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 text-maroon-700">🔐 Reset Password</button>
                 <button type="button" @click="open=false; confirmDelete=true"
-                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 text-rose-700">
-                  🗑️ Delete
-                </button>
+                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 text-rose-700">🗑️ Delete</button>
               </div>
             </div>
 
-            {{-- Forms --}}
+            {{-- Hidden forms --}}
             <form x-ref="resetForm" method="POST" action="{{ route('admin.users.resetPassword',$u) }}" class="hidden">@csrf</form>
             <form x-ref="deleteForm" method="POST" action="{{ route('admin.users.destroy',$u) }}" class="hidden">@csrf @method('DELETE')</form>
 
-            {{-- Modal: Reset --}}
-            <div x-cloak x-show="confirmReset" x-transition.opacity.duration.200ms class="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-labelledby="resetTitle" @keydown.escape.window="confirmReset=false">
-              <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmReset=false" x-transition.opacity.duration.200ms></div>
+            {{-- MODAL: Reset (seragam maroon) --}}
+            <div x-cloak x-show="confirmReset" x-transition.opacity.duration.200ms class="fixed inset-0 z-40"
+                 role="dialog" aria-modal="true" aria-labelledby="resetTitle" @keydown.escape.window="confirmReset=false">
+              <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmReset=false"></div>
               <div class="absolute inset-0 flex items-center justify-center p-4">
                 <div x-show="confirmReset"
                      x-transition:enter="transition ease-out duration-200"
@@ -251,7 +250,7 @@
                      class="w-full max-w-md rounded-2xl bg-white/95 backdrop-blur-sm shadow-2xl ring-1 ring-slate-200/80 overflow-hidden"
                      x-data x-init="$nextTick(()=> $el.querySelector('[data-primary]').focus())">
                   <div class="px-5 pt-5 pb-3 flex items-start gap-3">
-                    <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 text-maroon-900 flex items-center justify-center shadow-inner">
+                    <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-maroon-700 to-maroon-800 text-white flex items-center justify-center shadow-inner">
                       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <rect x="3" y="11" width="18" height="10" rx="2" stroke-width="2" />
                         <path d="M7 11V8a5 5 0 0110 0v3" stroke-width="2" />
@@ -273,9 +272,12 @@
                   </div>
                   <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
                   <div class="px-5 py-4 flex items-center justify-end gap-2.5">
-                    <button @click="confirmReset=false" class="px-3.5 py-2 rounded-xl text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 text-sm font-medium">Batal</button>
+                    <button @click="confirmReset=false"
+                            class="px-3.5 py-2 rounded-xl text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 text-sm font-medium">
+                      Batal
+                    </button>
                     <button data-primary @click="$refs.resetForm.submit()"
-                            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-maroon-900 text-sm font-semibold shadow hover:brightness-[1.03] active:scale-[0.99]">
+                            class="px-3.5 py-2 rounded-xl bg-maroon-700 text-white text-sm font-semibold shadow hover:brightness-[1.03] active:scale-[0.99]">
                       Ya, Reset
                     </button>
                   </div>
@@ -283,9 +285,10 @@
               </div>
             </div>
 
-            {{-- Modal: Delete --}}
-            <div x-cloak x-show="confirmDelete" x-transition.opacity.duration.200ms class="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-labelledby="delTitle" @keydown.escape.window="confirmDelete=false">
-              <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmDelete=false" x-transition.opacity.duration.200ms></div>
+            {{-- MODAL: Delete (seragam rose) --}}
+            <div x-cloak x-show="confirmDelete" x-transition.opacity.duration.200ms class="fixed inset-0 z-40"
+                 role="dialog" aria-modal="true" aria-labelledby="delTitle" @keydown.escape.window="confirmDelete=false">
+              <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmDelete=false"></div>
               <div class="absolute inset-0 flex items-center justify-center p-4">
                 <div x-show="confirmDelete"
                      x-transition:enter="transition ease-out duration-200"
@@ -327,7 +330,10 @@
                   </div>
                   <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
                   <div class="px-5 py-4 flex items-center justify-end gap-2.5">
-                    <button @click="confirmDelete=false" class="px-3.5 py-2 rounded-xl text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 text-sm font-medium">Batal</button>
+                    <button @click="confirmDelete=false"
+                            class="px-3.5 py-2 rounded-xl text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 text-sm font-medium">
+                      Batal
+                    </button>
                     <button data-primary
                             :class="(ack && text==='HAPUS') ? 'opacity-100' : 'opacity-50 cursor-not-allowed'"
                             :disabled="!(ack && text==='HAPUS')"
@@ -352,7 +358,7 @@
               <h3 class="mt-4 text-lg font-semibold text-slate-800">Belum ada user</h3>
               <p class="mt-1 text-sm text-slate-500">Tambahkan user baru untuk mulai mengelola akses.</p>
               <a href="{{ route('admin.users.create') }}"
-                 class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow bg-amber-400 text-maroon-900">
+                 class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow bg-maroon-700 text-white">
                 + Tambah User
               </a>
             </div>
@@ -367,7 +373,7 @@
     </div>
   </div>
 
-  {{-- MOBILE CARDS --}}
+  {{-- MOBILE CARDS (serumpun) --}}
   <div class="md:hidden divide-y bg-white">
     @forelse($users as $u)
       <div class="p-4" x-data="{confirmReset:false, confirmDelete:false}">
@@ -376,12 +382,12 @@
             <div class="font-semibold text-slate-900">{{ $u->name }}</div>
             <div class="text-xs text-slate-500">{{ $u->email }}</div>
             <div class="mt-1 text-xs space-x-1 space-y-1">
-              <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 ring-1 ring-amber-200">{{ $u->division->name ?? '-' }}</span>
+              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">{{ $u->division->name ?? '-' }}</span>
               <span class="px-2 py-0.5 rounded-full bg-maroon-100 text-maroon-800 ring-1 ring-maroon-200">
                 {{ is_string($u->role ?? null) ? ucfirst($u->role) : (optional($u->role)->name ?? '-') }}
               </span>
               @if($u->defaultSite)
-                <span class="px-2 py-0.5 rounded-full bg-amber-50 text-maroon-900 ring-1 ring-amber-200">
+                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200">
                   {{ $u->defaultSite->code }} — {{ $u->defaultSite->name }}
                 </span>
               @else
@@ -393,7 +399,7 @@
             <a href="{{ route('admin.users.edit',$u) }}"
                class="block px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium">✏️ Edit</a>
             <button type="button" @click="confirmReset=true"
-                    class="w-full px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 text-xs font-medium">
+                    class="w-full px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium">
               🔐 Reset
             </button>
             <button type="button" @click="confirmDelete=true"
@@ -407,12 +413,12 @@
         <form x-ref="resetForm" method="POST" action="{{ route('admin.users.resetPassword',$u) }}" class="hidden">@csrf</form>
         <form x-ref="deleteForm" method="POST" action="{{ route('admin.users.destroy',$u) }}" class="hidden">@csrf @method('DELETE')</form>
 
-        {{-- Modal: Reset (mobile) --}}
-        <div x-cloak x-show="confirmReset" class="fixed inset-0 z-30" aria-modal="true" role="dialog">
-          <div class="absolute inset-0 bg-black/40" @click="confirmReset=false"></div>
+        {{-- Modal: Reset (mobile • maroon) --}}
+        <div x-cloak x-show="confirmReset" class="fixed inset-0 z-40" aria-modal="true" role="dialog">
+          <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmReset=false"></div>
           <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="w-full max-w-sm rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden">
-              <div class="px-4 py-3 bg-gradient-to-r from-maroon-800 via-maroon-700 to-amber-500 text-white text-sm font-semibold">
+            <div class="w-full max-w-sm rounded-2xl bg-white/95 backdrop-blur-sm shadow-2xl ring-1 ring-slate-200 overflow-hidden">
+              <div class="px-4 py-3 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600 text-white text-sm font-semibold">
                 Konfirmasi Reset Password
               </div>
               <div class="p-4 text-sm text-slate-700">
@@ -422,15 +428,15 @@
                 <button @click="confirmReset=false"
                         class="px-3 py-1.5 rounded-lg ring-1 ring-slate-200 text-slate-700 hover:bg-slate-50">Batal</button>
                 <button @click="$refs.resetForm.submit()"
-                        class="px-3 py-1.5 rounded-lg bg-amber-500 text-maroon-900 font-semibold hover:bg-amber-400">Ya, Reset</button>
+                        class="px-3 py-1.5 rounded-lg bg-maroon-700 text-white font-semibold hover:bg-maroon-800">Ya, Reset</button>
               </div>
             </div>
           </div>
         </div>
 
-        {{-- Modal: Delete (mobile) --}}
-        <div x-cloak x-show="confirmDelete" x-transition.opacity.duration.200ms class="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-labelledby="delTitle" @keydown.escape.window="confirmDelete=false">
-          <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmDelete=false" x-transition.opacity.duration.200ms></div>
+        {{-- Modal: Delete (mobile • rose) --}}
+        <div x-cloak x-show="confirmDelete" x-transition.opacity.duration.200ms class="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-labelledby="delTitle">
+          <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmDelete=false"></div>
           <div class="absolute inset-0 flex items-center justify-center p-4">
             <div x-show="confirmDelete"
                  x-transition:enter="transition ease-out duration-200"
@@ -440,7 +446,7 @@
                  x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                  x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
                  class="w-full max-w-md rounded-2xl bg-white/95 backdrop-blur-sm shadow-2xl ring-1 ring-slate-200/80 overflow-hidden"
-                 x-data="{ ack:false, text:'' }" x-init="$nextTick(()=> $el.querySelector('[data-primary]')?.focus())">
+                 x-data="{ ack:false, text:'' }">
               <div class="px-5 pt-5 pb-3 flex items-start gap-3">
                 <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-600 to-red-600 text-white flex items-center justify-center shadow-inner">
                   <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -476,7 +482,7 @@
                         class="px-3.5 py-2 rounded-xl text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 text-sm font-medium">
                   Batal
                 </button>
-                <button data-primary
+                <button
                         :class="(ack && text==='HAPUS') ? 'opacity-100' : 'opacity-50 cursor-not-allowed'"
                         :disabled="!(ack && text==='HAPUS')"
                         @click="$refs.deleteForm.submit()"
