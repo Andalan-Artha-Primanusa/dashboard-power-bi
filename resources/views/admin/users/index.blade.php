@@ -5,6 +5,8 @@
 
 @section('content')
 @php
+  use Illuminate\Support\Facades\Storage;
+
   $q         = request('q','');
   $divId     = request('division_id');
   $roleKey   = request('role');
@@ -12,11 +14,20 @@
   $divisions = $divisions ?? collect([]);
   $roles     = $roles     ?? collect([]);   // ['gm','manager','super_admin',...]
   $sites     = $sites     ?? collect([]);
+
+  // Avatar resolver
+  $avatarUrl = function($u) {
+    if (!empty($u->photo_url)) return $u->photo_url;
+    if (!empty($u->avatar_path)) return Storage::url($u->avatar_path);
+    if (!empty($u->profile_photo_url)) return $u->profile_photo_url;
+    $hash = md5(strtolower(trim($u->email ?? '')));
+    return "https://www.gravatar.com/avatar/{$hash}?s=160&d=identicon";
+  };
 @endphp
 
 <div class="rounded-3xl shadow ring-1 ring-slate-200 bg-white overflow-hidden">
 
-  {{-- HEADER (Maroon-only • serumpun) --}}
+  {{-- HEADER --}}
   <div class="px-6 py-7 text-white relative overflow-hidden">
     <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600"></div>
     <div class="absolute inset-0 opacity-25 bg-[radial-gradient(70%_70%_at_10%_10%,_rgba(255,255,255,0.5)_0%,_transparent_60%)]"></div>
@@ -24,7 +35,7 @@
 
     <div class="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div class="text-white">
-        <h1 class="text-2xl font-bold tracking-tight">ARCA</h1>
+        <h1 class="text-2xl font-bold tracking-tight">ARCA — Manajemen User</h1>
         <p class="text-sm text-white/85 mt-1">Kelola akun, role, divisi, dan site.</p>
       </div>
       <a href="{{ route('admin.users.create') }}"
@@ -34,7 +45,7 @@
     </div>
   </div>
 
-  {{-- FILTER BAR (serumpun) --}}
+  {{-- FILTER BAR --}}
   <div class="px-6 py-4 border-b bg-white">
     <form method="GET" class="grid gap-3 sm:grid-cols-12 items-center">
       {{-- Search --}}
@@ -63,7 +74,10 @@
                 class="w-full rounded-xl border-slate-300 px-3 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700">
           <option value="">Semua Role</option>
           @foreach($roles as $rk => $rname)
-            @php $val = is_int($rk) ? $rname : $rk; $label = is_int($rk) ? ucfirst($rname) : $rname; @endphp
+            @php
+              $val   = is_int($rk) ? $rname : $rk;
+              $label = is_int($rk) ? ucfirst($rname) : $rname;
+            @endphp
             <option value="{{ $val }}" {{ ($roleKey===$val)?'selected':'' }}>{{ $label }}</option>
           @endforeach
         </select>
@@ -90,11 +104,11 @@
     </form>
   </div>
 
-  {{-- ALERTS (seragam) --}}
+  {{-- ALERTS --}}
   @php
-    $hasPwd   = session()->has('generated_password');
-    $statusMsg= session('status') ?? session('message');
-    $errs     = $errors->any() ? $errors->all() : [];
+    $hasPwd    = session()->has('generated_password');
+    $statusMsg = session('status') ?? session('message');
+    $errs      = $errors->any() ? $errors->all() : [];
   @endphp
   <div class="px-6 pt-5">
     @if ($hasPwd)
@@ -166,13 +180,12 @@
     @endif
   </div>
 
-  {{-- TABLE (desktop • seragam) --}}
+  {{-- TABLE (desktop) --}}
   <div class="hidden md:block p-6 overflow-x-auto">
     <table class="min-w-full text-sm">
       <thead class="sticky top-0 bg-slate-50 text-slate-600 text-xs font-semibold uppercase border-b">
         <tr>
-          <th class="px-4 py-3 text-left">Nama</th>
-          <th class="px-4 py-3 text-left">Email</th>
+          <th class="px-4 py-3 text-left">User</th>
           <th class="px-4 py-3 text-left">Divisi</th>
           <th class="px-4 py-3 text-left">Site</th>
           <th class="px-4 py-3 text-left">Role</th>
@@ -181,10 +194,19 @@
       </thead>
       <tbody class="divide-y divide-slate-200">
         @forelse($users as $u)
-        <tr class="hover:bg-slate-50"
-            x-data="{open:false, confirmReset:false, confirmDelete:false}">
-          <td class="px-4 py-3 text-slate-900">{{ $u->name }}</td>
-          <td class="px-4 py-3 text-slate-700">{{ $u->email }}</td>
+        <tr class="hover:bg-slate-50" x-data="{open:false, confirmReset:false, confirmDelete:false}">
+          {{-- USER (with photo) --}}
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <img src="{{ $avatarUrl($u) }}" alt="{{ $u->name }}"
+                   class="h-10 w-10 rounded-xl object-cover ring-1 ring-slate-200 shadow-sm">
+              <div class="min-w-0">
+                <div class="font-semibold text-slate-900 truncate">{{ $u->name }}</div>
+                <div class="text-xs text-slate-500 truncate">{{ $u->email }}</div>
+              </div>
+            </div>
+          </td>
+
           <td class="px-4 py-3">
             @if($u->division)
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700 ring-1 ring-slate-200">
@@ -194,6 +216,7 @@
               <span class="text-slate-400">-</span>
             @endif
           </td>
+
           <td class="px-4 py-3">
             @if($u->defaultSite)
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-maroon-900 ring-1 ring-slate-200">
@@ -206,6 +229,7 @@
               <span class="text-slate-400">-</span>
             @endif
           </td>
+
           <td class="px-4 py-3">
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-maroon-100 text-maroon-800 ring-1 ring-maroon-200">
               {{ is_string($u->role ?? null) ? ucfirst($u->role) : (optional($u->role)->name ?? '-') }}
@@ -213,7 +237,6 @@
           </td>
 
           <td class="px-4 py-3 text-right">
-            {{-- Actions (seragam dropdown) --}}
             <div class="relative inline-block text-left">
               <button @click="open=!open"
                       class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold ring-1 ring-slate-200">
@@ -235,7 +258,7 @@
             <form x-ref="resetForm" method="POST" action="{{ route('admin.users.resetPassword',$u) }}" class="hidden">@csrf</form>
             <form x-ref="deleteForm" method="POST" action="{{ route('admin.users.destroy',$u) }}" class="hidden">@csrf @method('DELETE')</form>
 
-            {{-- MODAL: Reset (seragam maroon) --}}
+            {{-- MODAL: Reset --}}
             <div x-cloak x-show="confirmReset" x-transition.opacity.duration.200ms class="fixed inset-0 z-40"
                  role="dialog" aria-modal="true" aria-labelledby="resetTitle" @keydown.escape.window="confirmReset=false">
               <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmReset=false"></div>
@@ -285,7 +308,7 @@
               </div>
             </div>
 
-            {{-- MODAL: Delete (seragam rose) --}}
+            {{-- MODAL: Delete --}}
             <div x-cloak x-show="confirmDelete" x-transition.opacity.duration.200ms class="fixed inset-0 z-40"
                  role="dialog" aria-modal="true" aria-labelledby="delTitle" @keydown.escape.window="confirmDelete=false">
               <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmDelete=false"></div>
@@ -350,7 +373,7 @@
         </tr>
         @empty
         <tr>
-          <td colspan="6" class="px-4 py-16">
+          <td colspan="5" class="px-4 py-16">
             <div class="mx-auto max-w-md text-center">
               <div class="mx-auto h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center">
                 <svg class="h-6 w-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
@@ -373,29 +396,33 @@
     </div>
   </div>
 
-  {{-- MOBILE CARDS (serumpun) --}}
+  {{-- MOBILE CARDS --}}
   <div class="md:hidden divide-y bg-white">
     @forelse($users as $u)
       <div class="p-4" x-data="{confirmReset:false, confirmDelete:false}">
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <div class="font-semibold text-slate-900">{{ $u->name }}</div>
-            <div class="text-xs text-slate-500">{{ $u->email }}</div>
-            <div class="mt-1 text-xs space-x-1 space-y-1">
-              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">{{ $u->division->name ?? '-' }}</span>
-              <span class="px-2 py-0.5 rounded-full bg-maroon-100 text-maroon-800 ring-1 ring-maroon-200">
-                {{ is_string($u->role ?? null) ? ucfirst($u->role) : (optional($u->role)->name ?? '-') }}
-              </span>
-              @if($u->defaultSite)
-                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200">
-                  {{ $u->defaultSite->code }} — {{ $u->defaultSite->name }}
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-start gap-3 min-w-0">
+            <img src="{{ $avatarUrl($u) }}" alt="{{ $u->name }}"
+                 class="h-12 w-12 rounded-2xl object-cover ring-1 ring-slate-200 shadow-sm">
+            <div class="min-w-0">
+              <div class="font-semibold text-slate-900 truncate">{{ $u->name }}</div>
+              <div class="text-xs text-slate-500 truncate">{{ $u->email }}</div>
+              <div class="mt-1 text-xs space-x-1 space-y-1">
+                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">{{ $u->division->name ?? '-' }}</span>
+                <span class="px-2 py-0.5 rounded-full bg-maroon-100 text-maroon-800 ring-1 ring-maroon-200">
+                  {{ is_string($u->role ?? null) ? ucfirst($u->role) : (optional($u->role)->name ?? '-') }}
                 </span>
-              @else
-                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">No Site</span>
-              @endif
+                @if($u->defaultSite)
+                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200">
+                    {{ $u->defaultSite->code }} — {{ $u->defaultSite->name }}
+                  </span>
+                @else
+                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">No Site</span>
+                @endif
+              </div>
             </div>
           </div>
-          <div class="text-right space-y-2">
+          <div class="text-right space-y-2 shrink-0">
             <a href="{{ route('admin.users.edit',$u) }}"
                class="block px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium">✏️ Edit</a>
             <button type="button" @click="confirmReset=true"
@@ -413,7 +440,7 @@
         <form x-ref="resetForm" method="POST" action="{{ route('admin.users.resetPassword',$u) }}" class="hidden">@csrf</form>
         <form x-ref="deleteForm" method="POST" action="{{ route('admin.users.destroy',$u) }}" class="hidden">@csrf @method('DELETE')</form>
 
-        {{-- Modal: Reset (mobile • maroon) --}}
+        {{-- Modal: Reset (mobile) --}}
         <div x-cloak x-show="confirmReset" class="fixed inset-0 z-40" aria-modal="true" role="dialog">
           <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmReset=false"></div>
           <div class="absolute inset-0 flex items-center justify-center p-4">
@@ -434,7 +461,7 @@
           </div>
         </div>
 
-        {{-- Modal: Delete (mobile • rose) --}}
+        {{-- Modal: Delete (mobile) --}}
         <div x-cloak x-show="confirmDelete" x-transition.opacity.duration.200ms class="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-labelledby="delTitle">
           <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmDelete=false"></div>
           <div class="absolute inset-0 flex items-center justify-center p-4">

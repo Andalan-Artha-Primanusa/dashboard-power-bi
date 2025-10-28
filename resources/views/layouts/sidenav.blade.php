@@ -3,6 +3,7 @@
   @php
     use Illuminate\Support\Str;
     use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Facades\Storage;
 
     // ====== user & role mapping ======
     $u = Auth::user();
@@ -34,9 +35,25 @@
     $name  = $u?->name ?? 'User';
     $email = $u?->email ?? '';
 
-    // Foto: urutan fallback -> profile_photo_url (Jetstream) -> accessor photo_url -> storage/photo_path -> null
-    $photo = $u?->profile_photo_url
-          ?? ($u?->photo_url ?? ($u?->photo_path ? asset('storage/'.$u->photo_path) : null));
+    // ====== FOTO / AVATAR FALLBACK ORDER ======
+    // 1) avatar_path (hasil upload ke storage/app/public/avatars)
+    // 2) photo_url (accessor/custom)
+    // 3) profile_photo_url (Jetstream)
+    // 4) Gravatar
+    // 5) Inisial (jika benar-benar tidak ada url)
+    $photo = null;
+
+    if (!empty($u?->avatar_path)) {
+      // avatar_path harus relatif, contoh: "avatars/xxxx.png"
+      $photo = Storage::url($u->avatar_path); // -> "/storage/avatars/xxxx.png"
+    } elseif (!empty($u?->photo_url)) {
+      $photo = $u->photo_url;
+    } elseif (!empty($u?->profile_photo_url)) {
+      $photo = $u->profile_photo_url;
+    } elseif (!empty($email)) {
+      $hash  = md5(strtolower(trim($email)));
+      $photo = "https://www.gravatar.com/avatar/{$hash}?s=160&d=identicon";
+    }
 
     $initials = collect(preg_split('/\s+/', trim($name)))
                   ->filter()
@@ -189,7 +206,6 @@
       @endif
     </a>
 
-    {{-- Quick open ke dashboard site aktif --}}
     <div class="px-1">
       <a href="{{ $activeSite ? route('powerbi.site.reports', $activeSite) : route('powerbi.sites') }}"
          class="mt-1 w-full inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs
@@ -198,7 +214,6 @@
       </a>
     </div>
 
-    {{-- ADMIN SECTION: tampil untuk GM & Super Admin --}}
     @if($u && ($isGM || $isSuperAdmin))
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-white/70">Admin</div>
 
@@ -223,7 +238,6 @@
       </a>
     @endif
 
-    {{-- SECURITY: Super Admin atau user yang punya izin --}}
     @if(($u && $isSuperAdmin) || ($u && method_exists($u,'can') && $u->can('view-audit')))
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-white/70">Security</div>
 
@@ -233,7 +247,6 @@
         📜 Audit — Index
       </a>
 
-      {{-- ke halaman log per user (current user) --}}
       <a href="{{ route('admin.audit.user', $u?->id) }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
                 {{ request()->routeIs('admin.audit.user') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">

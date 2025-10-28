@@ -4,10 +4,23 @@
 @section('title', 'Edit User')
 
 @section('header')
-    ✏️ Edit User: {{ $user->name }}
+  ✏️ Edit User: {{ $user->name }}
 @endsection
 
 @section('content')
+@php
+  use Illuminate\Support\Facades\Storage;
+
+  // Resolver foto/avatar (absolute URL / storage / jetstream / gravatar)
+  $avatarUrl = function($u) {
+    if (!empty($u->photo_url)) return $u->photo_url;
+    if (!empty($u->avatar_path)) return Storage::url($u->avatar_path);
+    if (!empty($u->profile_photo_url)) return $u->profile_photo_url;
+    $hash = md5(strtolower(trim($u->email ?? '')));
+    return "https://www.gravatar.com/avatar/{$hash}?s=240&d=identicon";
+  };
+@endphp
+
 <div class="bg-white shadow rounded-2xl ring-1 ring-slate-200 overflow-hidden">
 
   {{-- PASSWORD BANNER (tampil sekali) --}}
@@ -73,6 +86,75 @@
       </div>
     </div>
 
+    {{-- ====================== FOTO / AVATAR ====================== --}}
+    <div class="grid md:grid-cols-[auto,1fr] gap-5 items-start">
+      {{-- Foto saat ini --}}
+      <div class="space-y-2">
+        <div class="text-sm font-semibold text-slate-700">Foto / Avatar</div>
+        <img src="{{ $avatarUrl($user) }}"
+             alt="Avatar {{ $user->name }}"
+             class="h-28 w-28 rounded-2xl object-cover ring-1 ring-slate-200 shadow-sm bg-slate-100">
+        <p class="text-xs text-slate-500">Format: JPG/PNG, maks ±2MB. Disarankan 512×512.</p>
+
+        {{-- Hapus foto (opsional) --}}
+        @if(!empty($user->avatar_path) || !empty($user->photo_url) || !empty($user->profile_photo_path))
+          <form method="POST" action="{{ route('admin.users.deletePhoto', $user) }}">
+            @csrf
+            @method('DELETE')
+            <button type="submit"
+                    class="mt-2 px-3 py-1.5 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-500">
+              🗑️ Hapus Foto
+            </button>
+          </form>
+        @endif
+      </div>
+
+      {{-- Upload / ganti foto --}}
+      <div
+        x-data="{
+          fileName: '',
+          previewSrc: '',
+          onFileChange(e){
+            const f = e.target.files[0];
+            if(!f) { this.fileName=''; this.previewSrc=''; return; }
+            this.fileName = f.name;
+            const reader = new FileReader();
+            reader.onload = (ev)=> this.previewSrc = ev.target.result;
+            reader.readAsDataURL(f);
+          }
+        }"
+        class="space-y-3"
+      >
+        <form method="POST" action="{{ route('admin.users.updatePhoto', $user) }}" enctype="multipart/form-data" class="space-y-3">
+          @csrf
+          @method('PATCH')
+
+          <label class="block text-sm font-semibold text-slate-700">Ganti Foto</label>
+          <input type="file" name="photo" accept="image/*" @change="onFileChange"
+                 class="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0
+                        file:bg-maroon-700 file:text-white hover:file:bg-maroon-800
+                        file:font-semibold file:shadow-sm
+                        border-slate-300 rounded-lg focus:ring-maroon-600 focus:border-maroon-600" />
+
+          <template x-if="previewSrc">
+            <div class="flex items-center gap-3">
+              <img :src="previewSrc" alt="Preview"
+                   class="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200 shadow bg-slate-50">
+              <div class="text-xs text-slate-600 truncate" x-text="fileName"></div>
+            </div>
+          </template>
+
+          @error('photo') <p class="text-rose-600 text-sm">{{ $message }}</p> @enderror
+
+          <button type="submit"
+                  class="px-4 py-2 rounded-xl bg-maroon-700 text-white font-semibold hover:bg-maroon-600">
+            ⤴️ Upload & Simpan
+          </button>
+        </form>
+      </div>
+    </div>
+    {{-- ==================== /FOTO / AVATAR ==================== --}}
+
     {{-- UPDATE DIVISION --}}
     <div>
       <form method="POST" action="{{ route('admin.users.updateDivision',$user) }}" class="space-y-2">
@@ -98,7 +180,6 @@
 
     {{-- UPDATE DEFAULT SITE --}}
     <div>
-      {{-- NOTE: butuh route & method controller updateSite --}}
       <form method="POST" action="{{ route('admin.users.updateSite',$user) }}" class="space-y-2">
         @csrf
         @method('PATCH')
@@ -108,7 +189,7 @@
                 class="mt-1 block w-full rounded-lg border-slate-300 focus:ring-gold-500 focus:border-gold-500">
           <option value="">— None —</option>
           @foreach($sites as $s)
-            <option value="{{ $s->id }}" @selected($user->default_site_id===$s->id)>
+            <option value="{{ $s->id }}" @selected($user->default_site_id==$s->id)>
               {{ $s->code }} — {{ $s->name }} @if($s->region) ({{ $s->region }}) @endif
             </option>
           @endforeach
