@@ -5,10 +5,10 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Storage;
 
-    // ====== user & role mapping ======
     $u = Auth::user();
     try { $u?->loadMissing('role'); } catch (\Throwable $e) {}
 
+    // ====== user & role mapping ======
     $rawRole = $u?->role?->key
             ?? $u?->role?->slug
             ?? $u?->role?->name
@@ -36,16 +36,9 @@
     $email = $u?->email ?? '';
 
     // ====== FOTO / AVATAR FALLBACK ORDER ======
-    // 1) avatar_path (hasil upload ke storage/app/public/avatars)
-    // 2) photo_url (accessor/custom)
-    // 3) profile_photo_url (Jetstream)
-    // 4) Gravatar
-    // 5) Inisial (jika benar-benar tidak ada url)
     $photo = null;
-
     if (!empty($u?->avatar_path)) {
-      // avatar_path harus relatif, contoh: "avatars/xxxx.png"
-      $photo = Storage::url($u->avatar_path); // -> "/storage/avatars/xxxx.png"
+      $photo = Storage::url($u->avatar_path);
     } elseif (!empty($u?->photo_url)) {
       $photo = $u->photo_url;
     } elseif (!empty($u?->profile_photo_url)) {
@@ -61,7 +54,8 @@
                   ->take(2)->implode('') ?: 'U';
 
     // ====== model Site (optional) ======
-    try { $hasSiteModel = class_exists(\App\Models\Site::class); } catch (\Throwable $e) { $hasSiteModel = false; }
+    try { $hasSiteModel = class_exists(\App\Models\Site::class); }
+    catch (\Throwable $e) { $hasSiteModel = false; }
     if ($hasSiteModel) { $SiteClass = \App\Models\Site::class; }
 
     // ====== site aktif & switching rules ======
@@ -76,34 +70,32 @@
     if ($hasSiteModel && $activeSiteId) {
       try { $activeSite = $SiteClass::find($activeSiteId); } catch (\Throwable $e) {}
     }
-    $siteLabel = $activeSite ? (($activeSite->code ?? 'SITE').' — '.($activeSite->name ?? '')) : 'Belum memilih site';
+    $siteLabel = $activeSite
+      ? (($activeSite->code ?? 'SITE').' — '.($activeSite->name ?? ''))
+      : 'Belum memilih site';
 
     // daftar site untuk switch (GM & SA bisa)
     $allowedSites = collect();
     if ($hasSiteModel && ($isGM || $isSuperAdmin)) {
       try {
-        $q = method_exists($SiteClass,'active') ? $SiteClass::active() : $SiteClass::query()->where('is_active',true);
+        $q = method_exists($SiteClass,'active')
+          ? $SiteClass::active()
+          : $SiteClass::query()->where('is_active',true);
+
         $allowedSites = $q->orderBy('name')->get();
       } catch (\Throwable $e) {}
     }
     $canSwitchSite = ($isGM || $isSuperAdmin) && $allowedSites->isNotEmpty();
   @endphp
 
-  {{-- HEADER --}}
-  <div class="flex items-center justify-between h-16 px-4 border-b border-maroon-700 bg-maroon-900/90 backdrop-blur">
-    <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-      <x-application-logo class="h-8 w-auto text-white" />
-      <span class="font-bold text-sm text-white/90">
+  {{-- HEADER (tanpa tombol apa-apa) --}}
+  <div class="flex items-center h-16 px-4 border-b border-maroon-700 bg-maroon-900/90 backdrop-blur">
+    <a href="{{ route('dashboard') }}" class="flex items-center gap-2 min-w-0">
+      <x-application-logo class="h-8 w-auto text-white shrink-0" />
+      <span class="font-bold text-sm text-white/90 truncate">
         ARCA — Andalan Reporting & Control Analytics
       </span>
     </a>
-    @if(($mobile ?? false) === true)
-      <button type="button" @click="$dispatch('close-sidebar')" class="p-2 rounded text-white/70 hover:text-white lg:hidden" aria-label="Close sidebar">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    @endif
   </div>
 
   {{-- USER CARD --}}
@@ -117,10 +109,13 @@
             {{ $initials }}
           </div>
         @endif
+
         <div class="min-w-0">
           <div class="text-base font-extrabold text-white leading-tight truncate">{{ $name }}</div>
           <div class="mt-0.5 flex items-center gap-2">
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-white text-maroon-900 font-black tracking-wide">{{ $displayRole }}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-white text-maroon-900 font-black tracking-wide">
+              {{ $displayRole }}
+            </span>
           </div>
           <div class="text-[12px] text-white/80 truncate mt-0.5">{{ $email }}</div>
         </div>
@@ -137,7 +132,9 @@
           <div class="mt-1 text-sm font-semibold text-white truncate">
             {{ $siteLabel }}
             @if($activeSite)
-              <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-white text-maroon-900 font-bold align-middle">{{ $activeSite->code }}</span>
+              <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-white text-maroon-900 font-bold align-middle">
+                {{ $activeSite->code }}
+              </span>
             @endif
           </div>
           <div class="mt-1 flex items-center gap-1.5 text-[11px]">
@@ -166,7 +163,8 @@
             <div class="max-h-44 overflow-y-auto space-y-1 pr-1">
               @foreach($allowedSites as $s)
                 <label class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-maroon-800 cursor-pointer {{ $activeSiteId===$s->id ? 'ring-1 ring-white/70 bg-maroon-800' : '' }}">
-                  <input type="radio" name="site_id" value="{{ $s->id }}" class="text-white focus:ring-white" @checked($activeSiteId===$s->id)>
+                  <input type="radio" name="site_id" value="{{ $s->id }}" class="text-white focus:ring-white"
+                         @checked($activeSiteId===$s->id)>
                   <span class="text-sm">
                     <span class="font-semibold text-white">{{ $s->code }}</span>
                     <span class="text-white/80">— {{ $s->name }}</span>
@@ -178,7 +176,9 @@
               @endforeach
             </div>
             <div class="flex items-center justify-end pt-2">
-              <button type="submit" class="px-3 py-1.5 rounded-lg bg-white text-maroon-900 text-xs font-extrabold hover:bg-white/90">Simpan</button>
+              <button type="submit" class="px-3 py-1.5 rounded-lg bg-white text-maroon-900 text-xs font-extrabold hover:bg-white/90">
+                Simpan
+              </button>
             </div>
           </form>
         </div>
@@ -192,12 +192,14 @@
   {{-- MENU --}}
   <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-2">
     <a href="{{ route('dashboard') }}"
-       class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('dashboard') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+       class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+              {{ request()->routeIs('dashboard') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
       📊 Dashboard
     </a>
 
     <a href="{{ route('powerbi.sites') }}"
-       class="flex items-center justify-between px-3 py-2 rounded-lg transition {{ request()->routeIs('powerbi.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+       class="flex items-center justify-between px-3 py-2 rounded-lg transition
+              {{ request()->routeIs('powerbi.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
       <span class="inline-flex items-center gap-2">📈 Dashboards</span>
       @if($activeSite)
         <span class="text-[11px] font-semibold {{ request()->routeIs('powerbi.*') ? 'text-maroon-800' : 'text-white/80' }}">
@@ -218,22 +220,26 @@
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-white/70">Admin</div>
 
       <a href="{{ route('admin.sites.index') }}"
-         class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.sites.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+                {{ request()->routeIs('admin.sites.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         🏞️ Sites
       </a>
 
       <a href="{{ route('admin.powerbi.index') }}"
-         class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.powerbi.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+                {{ request()->routeIs('admin.powerbi.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         🧰 Power BI Admin
       </a>
 
       <a href="{{ route('admin.divisions.index') }}"
-         class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.divisions.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+                {{ request()->routeIs('admin.divisions.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         🏢 Divisions
       </a>
 
       <a href="{{ route('admin.users.index') }}"
-         class="flex items-center gap-2 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+                {{ request()->routeIs('admin.users.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
         👥 Users
       </a>
     @endif
@@ -259,9 +265,10 @@
   <div class="border-t border-maroon-700 bg-maroon-900/90 px-4 py-4">
     <form method="POST" action="{{ route('logout') }}">
       @csrf
-      <button type="submit" class="w-full px-3 py-2 rounded-xl bg-white text-maroon-900 text-sm font-extrabold hover:bg-white/90 shadow">
+      <button type="submit"
+              class="w-full px-3 py-2 rounded-xl bg-white text-maroon-900 text-sm font-extrabold hover:bg-white/90 shadow">
         <span class="inline-flex items-center gap-2 justify-center">
-          Log Out
+          🚪 Log Out
         </span>
       </button>
     </form>
