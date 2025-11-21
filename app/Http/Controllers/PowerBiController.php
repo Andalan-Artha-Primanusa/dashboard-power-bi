@@ -135,12 +135,20 @@ class PowerBiController extends Controller
     /**
      * STEP 3 — Detail report: embed Power BI
      */
-    public function show(PowerBiReport $report)
-    {
-        // Pastikan user berhak melihat (Gate sudah mengandalkan scope visibleTo)
-        abort_unless(Gate::allows('view-powerbi', $report), 403);
+   public function show(Request $request, PowerBiReport $report)
+{
+    $user = $request->user();
 
-        $embedUrl = $report->embedUrlWithUI();
-        return view('powerbi.show', compact('report','embedUrl'));
-    }
+    // cek apakah report ini memang visible untuk user tsb
+    $allowed = PowerBiReport::query()
+        ->visibleTo($user)
+        ->whereKey($report->id)
+        ->exists();
+
+    abort_unless($allowed, 403);
+
+    $embedUrl = $report->embedUrlWithUI();
+
+    return view('powerbi.show', compact('report','embedUrl'));
+}
 }
