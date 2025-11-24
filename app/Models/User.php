@@ -19,10 +19,14 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'default_company_id',   // ✅ TAMBAH INI
         'division_id',
         'role',
         'default_site_id',
         'allowed_site_ids',
+        // optional kalau kolom ada:
+        'avatar_path',
+        'photo_path',
     ];
 
     protected $hidden = ['password','remember_token'];
@@ -39,12 +43,6 @@ class User extends Authenticatable
         return $this->belongsTo(Division::class);
     }
 
-    public function powerBiReports()
-    {
-        return $this->belongsToMany(PowerBiReport::class, 'powerbi_report_user', 'user_id', 'report_id')
-                    ->withTimestamps();
-    }
-
     public function defaultSite()
     {
         return $this->belongsTo(Site::class, 'default_site_id');
@@ -54,6 +52,12 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Site::class, 'site_user', 'user_id', 'site_id')
                     ->withTimestamps();
+    }
+
+    // ✅ RELASI COMPANY
+    public function defaultCompany()
+    {
+        return $this->belongsTo(Company::class, 'default_company_id');
     }
 
     // ===== Role helpers =====
@@ -79,10 +83,6 @@ class User extends Authenticatable
     }
 
     // ===== Site access helpers =====
-    /**
-     * Kembalikan koleksi Site yang dapat diakses user:
-     * 1) via pivot site_user; 2) via allowed_site_ids (JSON); 3) fallback defaultSite.
-     */
     public function accessibleSites()
     {
         $viaPivot = $this->sites()->pluck('sites.id')->all();
@@ -98,10 +98,6 @@ class User extends Authenticatable
         return $this->defaultSite ? Site::whereKey($this->default_site_id)->get() : collect();
     }
 
-    /**
-     * Apakah user boleh akses site tertentu?
-     * SA/GM selalu true; lainnya cek pivot, JSON allowed_site_ids, atau default_site_id.
-     */
     public function canAccessSite($siteOrId): bool
     {
         if ($this->isSuperAdmin() || $this->isGM()) return true;
@@ -117,9 +113,6 @@ class User extends Authenticatable
         return $this->default_site_id === $targetId;
     }
 
-    /**
-     * Ambil Site aktif dari session jika valid; fallback ke defaultSite.
-     */
     public function activeSite(): ?Site
     {
         $sid = session('site_id');

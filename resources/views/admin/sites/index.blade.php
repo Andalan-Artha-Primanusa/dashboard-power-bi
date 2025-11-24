@@ -4,6 +4,14 @@
 @section('title','Daftar Sites')
 
 @section('content')
+@php
+  // dari controller (SiteAdminController@index)
+  $companies = $companies ?? collect();
+  $companyId = $companyId ?? request('company_id') ?? session('company_id');
+  $only = $only ?? request('only');
+  $q    = $q ?? request('q');
+@endphp
+
 <div class="rounded-3xl overflow-hidden shadow ring-1 ring-slate-200 bg-white">
 
   {{-- HEADER (maroon-only, serumpun) --}}
@@ -15,9 +23,11 @@
     <div class="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">👷 Sites Management</h1>
-        <p class="text-white/85 text-sm mt-1">Kelola site, status aktif, dan pemulihan data terhapus.</p>
+        <p class="text-white/85 text-sm mt-1">
+          Kelola site per perusahaan, status aktif, dan pemulihan data terhapus.
+        </p>
       </div>
-      <a href="{{ route('admin.sites.create') }}"
+      <a href="{{ route('admin.sites.create', array_filter(['company_id'=>$companyId])) }}"
          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-maroon-900 font-semibold shadow hover:bg-slate-50">
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -73,34 +83,61 @@
     @endif
   </div>
 
-  {{-- TOOLBAR (chip filter + search seragam) --}}
-  <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div class="flex items-center gap-2">
-      <a href="{{ route('admin.sites.index') }}"
-         class="px-3 py-2 rounded-lg text-xs font-semibold transition
-                {{ ($only ?? '') !== 'trashed'
-                    ? 'bg-maroon-700 text-white ring-1 ring-maroon-900 shadow-sm'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-        Aktif
-      </a>
-      <a href="{{ route('admin.sites.index', ['only' => 'trashed']) }}"
-         class="px-3 py-2 rounded-lg text-xs font-semibold transition
-                {{ ($only ?? '') === 'trashed'
-                    ? 'bg-maroon-700 text-white ring-1 ring-maroon-900 shadow-sm'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-        Terhapus
-      </a>
+  {{-- TOOLBAR (chip filter + company filter + search) --}}
+  <div class="px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+
+    {{-- chips + company dropdown --}}
+    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+      <div class="flex items-center gap-2">
+        <a href="{{ route('admin.sites.index', array_filter(['company_id'=>$companyId])) }}"
+           class="px-3 py-2 rounded-lg text-xs font-semibold transition
+                  {{ ($only ?? '') !== 'trashed'
+                      ? 'bg-maroon-700 text-white ring-1 ring-maroon-900 shadow-sm'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+          Aktif
+        </a>
+        <a href="{{ route('admin.sites.index', array_filter(['only'=>'trashed','company_id'=>$companyId])) }}"
+           class="px-3 py-2 rounded-lg text-xs font-semibold transition
+                  {{ ($only ?? '') === 'trashed'
+                      ? 'bg-maroon-700 text-white ring-1 ring-maroon-900 shadow-sm'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+          Terhapus
+        </a>
+      </div>
+
+      {{-- company filter --}}
+      @if($companies->isNotEmpty())
+        <form method="GET" class="sm:ml-2">
+          <input type="hidden" name="only" value="{{ $only }}">
+          <input type="hidden" name="q" value="{{ $q }}">
+          <select name="company_id"
+                  onchange="this.form.submit()"
+                  class="mt-2 sm:mt-0 w-full sm:w-64 rounded-xl border-slate-300 py-2 text-sm
+                         focus:ring-maroon-700 focus:border-maroon-700">
+            <option value="">🏭 Semua Perusahaan</option>
+            @foreach($companies as $c)
+              <option value="{{ $c->id }}" @selected($companyId===$c->id)>
+                {{ $c->code }} — {{ $c->name }}
+              </option>
+            @endforeach
+          </select>
+        </form>
+      @endif
     </div>
 
-    <form method="GET" class="w-full sm:w-auto">
+    {{-- search --}}
+    <form method="GET" class="w-full lg:w-auto">
+      <input type="hidden" name="only" value="{{ $only }}">
+      <input type="hidden" name="company_id" value="{{ $companyId }}">
       <div class="relative">
-        <input type="text" name="q" value="{{ request('q') ?? '' }}"
+        <input type="text" name="q" value="{{ $q ?? '' }}"
                placeholder="Cari kode atau nama…"
-               class="w-full sm:w-80 rounded-xl border-slate-300 pl-10 pr-24 py-2.5 text-sm focus:ring-maroon-700 focus:border-maroon-700">
+               class="w-full lg:w-80 rounded-xl border-slate-300 pl-10 pr-24 py-2.5 text-sm
+                      focus:ring-maroon-700 focus:border-maroon-700">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <circle cx="11" cy="11" r="7"/><path d="m21 21-3.5-3.5"/>
         </svg>
-        @if(request('q'))
+        @if($q)
           <button type="button"
                   onclick="this.closest('form').querySelector('[name=q]').value=''; this.closest('form').submit()"
                   class="absolute right-16 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-slate-100 text-slate-500">
@@ -121,6 +158,7 @@
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 text-slate-600 text-xs font-semibold uppercase border-b">
         <tr>
+          <th class="px-4 py-3 text-left">Company</th>
           <th class="px-4 py-3 text-left">Code</th>
           <th class="px-4 py-3 text-left">Name</th>
           <th class="px-4 py-3 text-left">Region</th>
@@ -132,9 +170,24 @@
         @forelse($sites as $s)
           <tr class="{{ (method_exists($s,'trashed') && $s->trashed()) ? 'bg-rose-50/40' : 'hover:bg-slate-50' }}"
               x-data="{ open:false, confirmDelete:false }">
+
+            {{-- Company col --}}
+            <td class="px-4 py-3">
+              @php $comp = $s->company ?? null; @endphp
+              @if($comp)
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200 text-[11px] font-semibold">
+                  🏭 {{ $comp->code }}
+                </span>
+                <div class="text-xs text-slate-500 mt-0.5 line-clamp-1">{{ $comp->name }}</div>
+              @else
+                <span class="text-xs text-slate-400">—</span>
+              @endif
+            </td>
+
             <td class="px-4 py-3 font-mono text-[13px] text-slate-800">{{ $s->code }}</td>
             <td class="px-4 py-3 font-medium text-slate-900">{{ $s->name }}</td>
             <td class="px-4 py-3 text-slate-500">{{ $s->region ?: '—' }}</td>
+
             <td class="px-4 py-3">
               @if(method_exists($s,'trashed') && $s->trashed())
                 <span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-xs font-medium">Trashed</span>
@@ -146,6 +199,7 @@
                 @endif
               @endif
             </td>
+
             <td class="px-4 py-3 text-right">
               {{-- ACTIONS dropdown (SERAGAM) --}}
               <div class="relative inline-block text-left">
@@ -261,7 +315,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="5" class="px-4 py-12 text-center text-slate-500">
+            <td colspan="6" class="px-4 py-12 text-center text-slate-500">
               Belum ada data. <a href="{{ route('admin.sites.create') }}" class="text-maroon-700 font-semibold hover:underline">Tambah Site</a>
             </td>
           </tr>
@@ -274,14 +328,27 @@
     </div>
   </div>
 
-  {{-- MOBILE CARDS (seragam badge & ACTIONS dropdown + modal) --}}
+  {{-- MOBILE CARDS --}}
   <div class="md:hidden divide-y bg-white">
     @forelse($sites as $s)
       <div class="p-4" x-data="{ open:false, confirmDelete:false }">
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-semibold text-slate-900">{{ $s->name }}</div>
-            <div class="text-xs text-slate-500">Kode: <span class="font-mono">{{ $s->code }}</span></div>
+            <div class="text-xs text-slate-500">
+              Kode: <span class="font-mono">{{ $s->code }}</span>
+            </div>
+
+            {{-- company badge --}}
+            @php $comp = $s->company ?? null; @endphp
+            @if($comp)
+              <div class="mt-1">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200 text-[11px] font-semibold">
+                  🏭 {{ $comp->code }} — {{ $comp->name }}
+                </span>
+              </div>
+            @endif
+
             <div class="mt-1">
               @if(method_exists($s,'trashed') && $s->trashed())
                 <span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-[11px] font-medium">Trashed</span>
@@ -330,7 +397,7 @@
           @csrf @method('DELETE')
         </form>
 
-        {{-- Modal --}}
+        {{-- Modal (sama persis dengan versi kamu) --}}
         <div x-cloak x-show="confirmDelete" x-transition.opacity.duration.200ms class="fixed inset-0 z-40" role="dialog" aria-modal="true">
           <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="confirmDelete=false" x-transition.opacity.duration.200ms></div>
           <div class="absolute inset-0 flex items-center justify-center p-4">
@@ -397,6 +464,10 @@
     @empty
       <div class="p-10 text-center text-slate-600">Tidak ada site ditemukan.</div>
     @endforelse
+
+    <div class="p-4">
+      {{ $sites->withQueryString()->links() }}
+    </div>
   </div>
 
 </div>

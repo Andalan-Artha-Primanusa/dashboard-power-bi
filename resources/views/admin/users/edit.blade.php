@@ -1,31 +1,62 @@
 {{-- resources/views/admin/users/edit.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Edit User')
-
-@section('header')
-  ✏️ Edit User: {{ $user->name }}
-@endsection
+@section('title','Edit User')
 
 @section('content')
 @php
   use Illuminate\Support\Facades\Storage;
+  use Illuminate\Support\Arr;
 
-  // Resolver foto/avatar (absolute URL / storage / jetstream / gravatar)
+  $companies = $companies ?? collect();
+  $divisions = $divisions ?? collect();
+  $sites     = $sites ?? collect();
+
+  // old values / current
+  $oldSiteIds = old('site_ids',
+      $user->sites?->pluck('id')->all()
+      ?? (array)($user->allowed_site_ids ?? [])
+  );
+  $oldSiteIds = Arr::wrap($oldSiteIds);
+
+  // Avatar resolver
   $avatarUrl = function($u) {
     if (!empty($u->photo_url)) return $u->photo_url;
     if (!empty($u->avatar_path)) return Storage::url($u->avatar_path);
     if (!empty($u->profile_photo_url)) return $u->profile_photo_url;
     $hash = md5(strtolower(trim($u->email ?? '')));
-    return "https://www.gravatar.com/avatar/{$hash}?s=240&d=identicon";
+    return "https://www.gravatar.com/avatar/{$hash}?s=160&d=identicon";
   };
+
+  $statusMsg = session('status') ?? session('message');
 @endphp
 
-<div class="bg-white shadow rounded-2xl ring-1 ring-slate-200 overflow-hidden">
+<div class="max-w-3xl mx-auto rounded-3xl overflow-hidden shadow ring-1 ring-slate-200 bg-white">
+
+  {{-- HEADER (maroon konsisten ARCA) --}}
+  <div class="px-6 py-7 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600"></div>
+    <div class="absolute inset-0 opacity-25 bg-[radial-gradient(70%_70%_at_10%_10%,_rgba(255,255,255,0.5)_0%,_transparent_60%)]"></div>
+    <div class="absolute -top-16 -right-16 size-64 rounded-full bg-white/10 blur-3xl"></div>
+
+    <div class="relative">
+      <h1 class="text-2xl font-bold tracking-tight">✏️ Edit User</h1>
+      <p class="text-sm text-white/85 mt-1">{{ $user->name }} — {{ $user->email }}</p>
+    </div>
+  </div>
+
+  {{-- STATUS --}}
+  @if($statusMsg)
+    <div class="px-6 pt-5">
+      <div class="mb-3 rounded-2xl border border-maroon-200 bg-maroon-50/70 ring-1 ring-maroon-100 shadow-sm px-4 py-3 text-sm text-maroon-900">
+        {{ $statusMsg }}
+      </div>
+    </div>
+  @endif
 
   {{-- PASSWORD BANNER (tampil sekali) --}}
   @if (session()->has('generated_password'))
-    <div class="px-6 pt-6">
+    <div class="px-6 pt-2">
       <div x-data="{open:true, copied:false}" x-show="open" x-transition
            class="relative mb-4 overflow-hidden rounded-2xl bg-white ring-1 ring-[#f6c74d] shadow-[inset_0_0_0_1px_#f6c74d]">
         <div class="bg-gradient-to-r from-maroon-700 via-maroon-600 to-yellow-600 px-4 py-2 text-white text-xs font-semibold tracking-wide">
@@ -53,7 +84,7 @@
                 <span x-show="copied" class="text-emerald-700">Copied!</span>
               </button>
             </div>
-            <p class="mt-1 text-xs text-slate-500">Jangan simpan di log. Minta user ganti password setelah login.</p>
+            <p class="mt-1 text-xs text-slate-500">Minta user ganti password setelah login.</p>
           </div>
           <button @click="open=false" class="ml-auto rounded-lg p-1.5 text-slate-600 hover:bg-slate-100">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -65,159 +96,206 @@
     </div>
   @endif
 
-  <div class="p-6 space-y-8">
+  {{-- FORM UTAMA --}}
+  <form action="{{ route('admin.users.update', $user) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
+    @csrf
+    @method('PATCH')
 
-    {{-- INFO RINGKAS --}}
-    <div class="rounded-2xl ring-1 ring-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-      <div><span class="font-semibold">Nama:</span> {{ $user->name }}</div>
-      <div><span class="font-semibold">Email:</span> {{ $user->email }}</div>
-      <div class="flex items-center gap-2">
-        <span class="font-semibold">Default Site:</span>
-        @if($user->defaultSite)
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-sky-100 text-sky-700 ring-1 ring-sky-200">
-            {{ $user->defaultSite->code }} — {{ $user->defaultSite->name }}
-            @if($user->defaultSite->region)
-              <span class="ml-1 text-[10px] opacity-80">({{ $user->defaultSite->region }})</span>
-            @endif
-          </span>
-        @else
-          <span class="text-slate-500">—</span>
-        @endif
-      </div>
-    </div>
+    {{-- Foto / Avatar --}}
+    <div
+      x-data="{
+        fileName: '',
+        previewSrc: '',
+        onFileChange(e){
+          const f = e.target.files[0];
+          if(!f){ this.fileName=''; this.previewSrc=''; return; }
+          this.fileName = f.name;
+          const reader = new FileReader();
+          reader.onload = (ev)=> this.previewSrc = ev.target.result;
+          reader.readAsDataURL(f);
+        }
+      }"
+      class="rounded-2xl ring-1 ring-slate-200 p-4 bg-slate-50"
+    >
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Foto / Avatar (opsional)</label>
+      <div class="flex items-center gap-4">
+        <img src="{{ $avatarUrl($user) }}" alt="Current Avatar"
+             class="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200 shadow bg-white">
 
-    {{-- ====================== FOTO / AVATAR ====================== --}}
-    <div class="grid md:grid-cols-[auto,1fr] gap-5 items-start">
-      {{-- Foto saat ini --}}
-      <div class="space-y-2">
-        <div class="text-sm font-semibold text-slate-700">Foto / Avatar</div>
-        <img src="{{ $avatarUrl($user) }}"
-             alt="Avatar {{ $user->name }}"
-             class="h-28 w-28 rounded-2xl object-cover ring-1 ring-slate-200 shadow-sm bg-slate-100">
-        <p class="text-xs text-slate-500">Format: JPG/PNG, maks ±2MB. Disarankan 512×512.</p>
+        <template x-if="previewSrc">
+          <img :src="previewSrc" alt="Preview"
+               class="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200 shadow bg-white">
+        </template>
 
-        {{-- Hapus foto (opsional) --}}
+        <div class="min-w-0 flex-1">
+          <input type="file" name="photo" accept="image/*" @change="onFileChange"
+                 class="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0
+                        file:bg-maroon-700 file:text-white hover:file:bg-maroon-800 file:font-semibold file:shadow-sm
+                        border-slate-300 rounded-lg focus:ring-maroon-700 focus:border-maroon-700" />
+          <div class="text-xs text-slate-500 mt-1"
+               x-text="fileName || 'Format: JPG/PNG, maks ±2MB. Disarankan 512×512.'"></div>
+          @error('photo') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- delete photo --}}
         @if(!empty($user->avatar_path) || !empty($user->photo_url) || !empty($user->profile_photo_path))
           <form method="POST" action="{{ route('admin.users.deletePhoto', $user) }}">
             @csrf
             @method('DELETE')
             <button type="submit"
-                    class="mt-2 px-3 py-1.5 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-500">
-              🗑️ Hapus Foto
+                    class="px-3 py-2 rounded-xl bg-rose-600 text-white text-xs font-semibold hover:bg-rose-500">
+              🗑️ Hapus
             </button>
           </form>
         @endif
       </div>
+    </div>
 
-      {{-- Upload / ganti foto --}}
-      <div
-        x-data="{
-          fileName: '',
-          previewSrc: '',
-          onFileChange(e){
-            const f = e.target.files[0];
-            if(!f) { this.fileName=''; this.previewSrc=''; return; }
-            this.fileName = f.name;
-            const reader = new FileReader();
-            reader.onload = (ev)=> this.previewSrc = ev.target.result;
-            reader.readAsDataURL(f);
-          }
-        }"
-        class="space-y-3"
-      >
-        <form method="POST" action="{{ route('admin.users.updatePhoto', $user) }}" enctype="multipart/form-data" class="space-y-3">
-          @csrf
-          @method('PATCH')
+    <div class="grid sm:grid-cols-2 gap-4">
 
-          <label class="block text-sm font-semibold text-slate-700">Ganti Foto</label>
-          <input type="file" name="photo" accept="image/*" @change="onFileChange"
-                 class="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0
-                        file:bg-maroon-700 file:text-white hover:file:bg-maroon-800
-                        file:font-semibold file:shadow-sm
-                        border-slate-300 rounded-lg focus:ring-maroon-600 focus:border-maroon-600" />
-
-          <template x-if="previewSrc">
-            <div class="flex items-center gap-3">
-              <img :src="previewSrc" alt="Preview"
-                   class="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200 shadow bg-slate-50">
-              <div class="text-xs text-slate-600 truncate" x-text="fileName"></div>
-            </div>
-          </template>
-
-          @error('photo') <p class="text-rose-600 text-sm">{{ $message }}</p> @enderror
-
-          <button type="submit"
-                  class="px-4 py-2 rounded-xl bg-maroon-700 text-white font-semibold hover:bg-maroon-600">
-            ⤴️ Upload & Simpan
-          </button>
-        </form>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Nama</label>
+        <input type="text" name="name" value="{{ old('name', $user->name) }}" required
+               class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+        @error('name') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
       </div>
-    </div>
-    {{-- ==================== /FOTO / AVATAR ==================== --}}
 
-    {{-- UPDATE DIVISION --}}
-    <div>
-      <form method="POST" action="{{ route('admin.users.updateDivision',$user) }}" class="space-y-2">
-        @csrf
-        @method('PATCH')
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Email</label>
+        <input type="email" name="email" value="{{ old('email', $user->email) }}" required
+               class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+        @error('email') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+      </div>
 
-        <label class="block text-sm font-semibold text-slate-700">Division</label>
-        <select name="division_id"
-                class="mt-1 block w-full rounded-lg border-slate-300 focus:ring-gold-500 focus:border-gold-500">
-          <option value="">— None —</option>
-          @foreach($divisions as $d)
-            <option value="{{ $d->id }}" @selected($user->division_id==$d->id)>{{ $d->name }}</option>
-          @endforeach
-        </select>
-        @error('division_id') <p class="text-red-600 text-sm">{{ $message }}</p> @enderror
-
-        <button type="submit"
-                class="mt-2 px-4 py-2 rounded-xl bg-maroon-700 text-white font-semibold hover:bg-maroon-600">
-          Update Division
-        </button>
-      </form>
-    </div>
-
-    {{-- UPDATE DEFAULT SITE --}}
-    <div>
-      <form method="POST" action="{{ route('admin.users.updateSite',$user) }}" class="space-y-2">
-        @csrf
-        @method('PATCH')
-
-        <label class="block text-sm font-semibold text-slate-700">Default Site</label>
-        <select name="default_site_id"
-                class="mt-1 block w-full rounded-lg border-slate-300 focus:ring-gold-500 focus:border-gold-500">
-          <option value="">— None —</option>
-          @foreach($sites as $s)
-            <option value="{{ $s->id }}" @selected($user->default_site_id==$s->id)>
-              {{ $s->code }} — {{ $s->name }} @if($s->region) ({{ $s->region }}) @endif
+      {{-- Default Company --}}
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Perusahaan (Default)</label>
+        <select name="default_company_id"
+                class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+          <option value="">— Pilih Perusahaan —</option>
+          @foreach($companies as $c)
+            <option value="{{ $c->id }}" @selected(old('default_company_id', $user->default_company_id) == $c->id)>
+              {{ $c->code ?? 'COMP' }} — {{ $c->name }}
             </option>
           @endforeach
         </select>
-        @error('default_site_id') <p class="text-red-600 text-sm">{{ $message }}</p> @enderror
+        @error('default_company_id') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+      </div>
 
-        <button type="submit"
-                class="mt-2 px-4 py-2 rounded-xl bg-sky-600 text-white font-semibold hover:bg-sky-500">
-          Update Default Site
-        </button>
-      </form>
-    </div>
+      {{-- Division --}}
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Divisi</label>
+        <select name="division_id"
+                class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+          <option value="">— Pilih Divisi —</option>
+          @foreach($divisions as $d)
+            <option value="{{ $d->id }}" @selected(old('division_id',$user->division_id) == $d->id)>
+              {{ $d->name }}
+            </option>
+          @endforeach
+        </select>
+        @error('division_id') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+      </div>
 
-    {{-- RESET PASSWORD (generate random) --}}
-    <div class="pt-2">
-      <form method="POST" action="{{ route('admin.users.resetPassword',$user) }}" class="space-y-2">
-        @csrf
-        <p class="text-sm text-slate-600">
-          Menekan tombol ini akan <span class="font-semibold text-slate-800">membuat password acak baru</span>
-          dan menampilkannya sekali di atas.
+      {{-- Role --}}
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Role</label>
+        <select name="role" required
+                class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+          <option value="super_admin" @selected(old('role',$user->role)==='super_admin')>Super Admin</option>
+          <option value="gm"          @selected(old('role',$user->role)==='gm')>General Manager</option>
+          <option value="manager"     @selected(old('role',$user->role)==='manager')>Manager</option>
+          <option value="staff"       @selected(old('role',$user->role)==='staff')>Staff</option>
+        </select>
+        @error('role') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+
+      {{-- Default Site --}}
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-semibold text-slate-700">Default Site</label>
+        <select name="default_site_id"
+                class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+          <option value="">— Tanpa Default Site —</option>
+          @foreach($sites as $s)
+            <option value="{{ $s->id }}" @selected(old('default_site_id',$user->default_site_id) == $s->id)>
+              {{ $s->code }} — {{ $s->name }}
+            </option>
+          @endforeach
+        </select>
+        <p class="text-xs text-slate-500 mt-1">
+          Non-GM/non-Super Admin akan terkunci ke default site ini saat login.
         </p>
-        <button type="submit"
-                class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-500">
-          🔐 Reset Password (Generate)
-        </button>
-      </form>
+        @error('default_site_id') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+
+      {{-- Allowed Sites (multi) --}}
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-semibold text-slate-700">
+          Site yang Diizinkan (multi / array)
+        </label>
+
+        <div class="mt-2 grid sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+          @foreach($sites as $s)
+            <label class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50">
+              <input type="checkbox"
+                     name="site_ids[]"
+                     value="{{ $s->id }}"
+                     class="rounded border-slate-300 text-maroon-700 focus:ring-maroon-600"
+                     @checked(in_array($s->id, $oldSiteIds, true))>
+              <span class="text-sm text-slate-800">
+                <span class="font-semibold">{{ $s->code }}</span>
+                <span class="text-slate-500">— {{ $s->name }}</span>
+                @if(!empty($s->region))
+                  <span class="text-[11px] text-slate-400 ml-1">({{ $s->region }})</span>
+                @endif
+              </span>
+            </label>
+          @endforeach
+        </div>
+
+        <p class="text-xs text-slate-500 mt-1">
+          Ini akses tambahan. Default Site tetap jadi site utama di session pertama.
+        </p>
+
+        @error('site_ids') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+        @error('site_ids.*') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+      </div>
     </div>
 
+    {{-- Password manual (opsional) --}}
+    <div class="rounded-2xl ring-1 ring-slate-200 p-4 bg-slate-50">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Password Baru (opsional)</label>
+      <input type="password" name="password" placeholder="Kosongkan jika tidak ingin mengganti"
+             class="block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+      @error('password') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
+      <p class="text-xs text-slate-500 mt-1">
+        Kalau dikosongkan, password tidak berubah.
+      </p>
+    </div>
+
+    {{-- Actions --}}
+    <div class="pt-2 flex items-center justify-between gap-3">
+      <a href="{{ route('admin.users.index') }}"
+         class="px-4 py-2 rounded-xl text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+        ← Kembali
+      </a>
+      <button type="submit"
+              class="px-4 py-2 rounded-xl bg-maroon-700 text-white font-semibold hover:bg-maroon-800 ring-1 ring-maroon-900/20">
+        💾 Simpan Perubahan
+      </button>
+    </div>
+  </form>
+
+  {{-- RESET PASSWORD BUTTON --}}
+  <div class="px-6 pb-6">
+    <form method="POST" action="{{ route('admin.users.resetPassword',$user) }}" class="mt-4">
+      @csrf
+      <button type="submit"
+              class="w-full px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-500">
+        🔐 Reset Password (Generate)
+      </button>
+    </form>
   </div>
+
 </div>
 @endsection

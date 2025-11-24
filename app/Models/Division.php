@@ -19,4 +19,10 @@ class Division extends Model
         return $this->belongsToMany(PowerBiReport::class, 'powerbi_report_division', 'division_id', 'report_id')
                     ->withTimestamps();
     }
+
+    public function company()
+{
+    return $this->belongsTo(\App\Models\Company::class, 'company_id');
+}
+
 }

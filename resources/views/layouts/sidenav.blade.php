@@ -53,6 +53,53 @@
                   ->map(fn($p)=>Str::upper(Str::substr($p,0,1)))
                   ->take(2)->implode('') ?: 'U';
 
+    // ====== model Company (optional) ======
+    try { $hasCompanyModel = class_exists(\App\Models\Company::class); }
+    catch (\Throwable $e) { $hasCompanyModel = false; }
+    if ($hasCompanyModel) { $CompanyClass = \App\Models\Company::class; }
+
+    // ====== company aktif & switching rules ======
+    $activeCompanyId = session('company_id') ?? ($u?->default_company_id ?? null);
+
+    // auto-set session dari default company (semua role)
+    if ($u && empty(session('company_id')) && !empty($u->default_company_id)) {
+      try { session(['company_id' => $u->default_company_id]); } catch (\Throwable $e) {}
+      $activeCompanyId = $u->default_company_id;
+    }
+
+    $activeCompany = null;
+    if ($hasCompanyModel && $activeCompanyId) {
+      try { $activeCompany = $CompanyClass::find($activeCompanyId); } catch (\Throwable $e) {}
+    }
+
+    $companyLabel = $activeCompany
+      ? (($activeCompany->code ?? 'COMP').' — '.($activeCompany->name ?? ''))
+      : 'Belum memilih perusahaan';
+
+    // daftar company yang boleh di-switch
+    // FIX: GM/SA selalu lihat semua company aktif walau user punya companies() pivot kosong
+    $allowedCompanies = collect();
+    if ($hasCompanyModel) {
+      try {
+        if ($isGM || $isSuperAdmin) {
+          $q = method_exists($CompanyClass,'active')
+                ? $CompanyClass::active()
+                : $CompanyClass::query()->where('is_active', true);
+
+          $allowedCompanies = $q->orderBy('name')->get();
+        } elseif ($u && method_exists($u, 'companies')) {
+          $q = $u->companies();
+          $q = method_exists($CompanyClass,'active')
+                ? $q->active()
+                : $q->where('is_active', true);
+
+          $allowedCompanies = $q->orderBy('name')->get();
+        }
+      } catch (\Throwable $e) {}
+    }
+
+    $canSwitchCompany = $allowedCompanies->isNotEmpty();
+
     // ====== model Site (optional) ======
     try { $hasSiteModel = class_exists(\App\Models\Site::class); }
     catch (\Throwable $e) { $hasSiteModel = false; }
@@ -120,6 +167,66 @@
           <div class="text-[12px] text-white/80 truncate mt-0.5">{{ $email }}</div>
         </div>
       </div>
+    </div>
+  </div>
+
+  {{-- COMPANY CARD + QUICK SWITCH --}}
+  <div class="px-4 pt-3" x-data="{ openCompanySwitch:false }">
+    <div class="rounded-2xl bg-maroon-900/60 ring-1 ring-maroon-600 p-4">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="text-xs uppercase tracking-wide text-white/70">Perusahaan Aktif</div>
+          <div class="mt-1 text-sm font-semibold text-white truncate">
+            {{ $companyLabel }}
+            @if($activeCompany)
+              <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-white text-maroon-900 font-bold align-middle">
+                {{ $activeCompany->code ?? 'COMP' }}
+              </span>
+            @endif
+          </div>
+          <div class="mt-1 flex items-center gap-1.5 text-[11px]">
+            @if($canSwitchCompany)
+              <span class="text-emerald-300">Dapat diganti</span>
+            @else
+              <span class="text-white/80">
+                @if($activeCompany) Terkunci @else Terkunci — hubungi GM untuk set default @endif
+              </span>
+            @endif
+          </div>
+        </div>
+
+        @if($canSwitchCompany)
+          <button type="button" @click="openCompanySwitch = !openCompanySwitch"
+                  class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-maroon-900 text-xs font-extrabold hover:bg-white/90 shadow">
+            Ganti
+          </button>
+        @endif
+      </div>
+
+      @if($canSwitchCompany)
+        <div x-cloak x-show="openCompanySwitch" x-transition class="mt-3 rounded-xl border border-maroon-600/70 bg-maroon-900 p-3">
+          <form action="{{ route('company.switch') }}" method="POST" class="space-y-2">
+            @csrf
+            <div class="max-h-44 overflow-y-auto space-y-1 pr-1">
+              @foreach($allowedCompanies as $c)
+                <label class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-maroon-800 cursor-pointer {{ $activeCompanyId===$c->id ? 'ring-1 ring-white/70 bg-maroon-800' : '' }}">
+                  <input type="radio" name="company_id" value="{{ $c->id }}" class="text-white focus:ring-white"
+                         @checked($activeCompanyId===$c->id)>
+                  <span class="text-sm">
+                    <span class="font-semibold text-white">{{ $c->code ?? 'COMP' }}</span>
+                    <span class="text-white/80">— {{ $c->name }}</span>
+                  </span>
+                </label>
+              @endforeach
+            </div>
+            <div class="flex items-center justify-end pt-2">
+              <button type="submit" class="px-3 py-1.5 rounded-lg bg-white text-maroon-900 text-xs font-extrabold hover:bg-white/90">
+                Simpan
+              </button>
+            </div>
+          </form>
+        </div>
+      @endif
     </div>
   </div>
 
@@ -216,8 +323,16 @@
       </a>
     </div>
 
+    {{-- ADMIN MENU --}}
     @if($u && ($isGM || $isSuperAdmin))
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-white/70">Admin</div>
+
+      {{-- NEW: Companies --}}
+      <a href="{{ route('admin.companies.index') }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-lg transition
+                {{ request()->routeIs('admin.companies.*') ? 'bg-white text-maroon-900 font-semibold shadow' : 'hover:bg-maroon-700 text-white' }}">
+        🏭 Companies
+      </a>
 
       <a href="{{ route('admin.sites.index') }}"
          class="flex items-center gap-2 px-3 py-2 rounded-lg transition
@@ -244,6 +359,7 @@
       </a>
     @endif
 
+    {{-- SECURITY --}}
     @if(($u && $isSuperAdmin) || ($u && method_exists($u,'can') && $u->can('view-audit')))
       <div class="mt-3 px-3 text-[11px] uppercase tracking-wide text-white/70">Security</div>
 

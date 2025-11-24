@@ -6,44 +6,84 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Division;
 use App\Models\Site;
+use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UserAdminController extends Controller
 {
-    /**
-     * List users dengan filter q, division, role, site.
-     */
-    public function index()
+    public function __construct()
     {
-        $q         = request('q', '');
-        $division  = request('division_id');
-        $roleKey   = request('role');
-        $siteId    = request('site_id');
+        $this->middleware(['auth', 'role:gm|super_admin']);
+    }
+
+    /**
+     * LIST USERS (NO AUTO-FILTER SESSION)
+     */
+    public function index(Request $request)
+    {
+        $q        = trim((string) $request->query('q', ''));
+        $division = $request->query('division_id');
+        $roleKey  = $request->query('role');
+        $siteId   = $request->query('site_id');
+        $companyId= $request->query('company_id'); // ✅ hanya dari query
+
+        // ✅ eager-load RELATION cuma kalau method-nya ada (biar gak 500)
+        $with = [];
+        if (method_exists(User::class, 'division')) {
+            $with['division'] = fn($qb) => $qb->select('id','name');
+        }
+        if (method_exists(User::class, 'defaultSite')) {
+            $with['defaultSite'] = fn($qb) => $qb->select('id','code','name','region');
+        }
+        if (method_exists(User::class, 'defaultCompany')) {
+            $with['defaultCompany'] = fn($qb) => $qb->select('id','code','name');
+        }
+        if (method_exists(User::class, 'sites')) {
+            $with['sites'] = fn($qb) => $qb->select('sites.id','code','name');
+        }
 
         $users = User::query()
-            ->with(['division', 'defaultSite'])
-            ->when($q, function ($qrb) use ($q) {
-                $qrb->where(function ($w) use ($q) {
+            ->with($with)
+
+            // filter company cuma kalau kolom & query ada
+            ->when(
+                $companyId && Schema::hasColumn('users', 'default_company_id'),
+                fn($qb) => $qb->where('default_company_id', $companyId)
+            )
+
+            ->when($q, function ($qb) use ($q) {
+                $qb->where(function ($w) use ($q) {
                     $w->where('name', 'like', "%{$q}%")
                       ->orWhere('email', 'like', "%{$q}%");
                 });
             })
-            ->when($division, fn($qrb) => $qrb->where('division_id', $division))
-            ->when($roleKey, fn($qrb) => $qrb->where('role', $roleKey))
-            ->when($siteId,  fn($qrb) => $qrb->where('default_site_id', $siteId))
+            ->when($division, fn($qb) => $qb->where('division_id', $division))
+            ->when($roleKey, fn($qb) => $qb->where('role', $roleKey))
+            ->when($siteId, fn($qb) => $qb->where('default_site_id', $siteId))
             ->orderBy('name')
             ->paginate(20)
             ->withQueryString();
 
-        $divisions = Division::orderBy('name')->get();
-        $sites     = Site::orderBy('code')->get(['id','code','name','region']);
+        $companies = Company::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id','code','name']);
 
-        // mapping role sederhana agar sesuai dengan <select> di view
+        $divisions = Division::query()
+            ->orderBy('name')
+            ->get(['id','name']);
+
+        $sites = Site::query()
+            ->orderBy('code')
+            ->get(['id','code','name','region']);
+
         $roles = [
             'super_admin' => 'Super Admin',
             'gm'          => 'GM',
@@ -51,245 +91,285 @@ class UserAdminController extends Controller
             'staff'       => 'Staff',
         ];
 
-        return view('admin.users.index', compact('users','divisions','sites','roles','q','division','roleKey','siteId'));
+        return view('admin.users.index', compact(
+            'users','companies','divisions','sites','roles',
+            'q','division','roleKey','siteId','companyId'
+        ));
     }
 
     /**
-     * Form create user.
+     * FORM CREATE USER
      */
-    public function create()
+    public function create(Request $request)
     {
-        $divisions = Division::orderBy('name')->get();
-        $sites     = Site::orderBy('code')->get(['id', 'code', 'name', 'region']);
+        $companyId = $request->query('company_id') ?: session('company_id');
 
-        return view('admin.users.create', compact('divisions', 'sites'));
+        $companies = Company::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id','code','name']);
+
+        $divisions = Division::query()
+            ->when(
+                $companyId && Schema::hasColumn('divisions', 'company_id'),
+                function ($qb) use ($companyId) {
+                    $qb->where(function ($w) use ($companyId) {
+                        $w->where('company_id', $companyId)
+                          ->orWhereNull('company_id');
+                    });
+                }
+            )
+            ->orderBy('name')
+            ->get(['id','name']);
+
+        $sites = Site::query()
+            ->when(
+                $companyId && Schema::hasColumn('sites', 'company_id'),
+                fn($qb) => $qb->where('company_id', $companyId)
+            )
+            ->orderBy('code')
+            ->get(['id','code','name','region']);
+
+        return view('admin.users.create', compact('companies','divisions','sites','companyId'));
     }
 
     /**
-     * Simpan user baru (password bisa diisi, default generate) + simpan foto jika ada.
+     * STORE USER BARU + MULTI-SITE
      */
     public function store(Request $r): RedirectResponse
     {
         $data = $r->validate([
-            'name'             => ['required', 'string', 'max:150'],
-            'email'            => ['required', 'email', 'max:190', 'unique:users,email'],
-            'division_id'      => ['nullable', 'uuid', 'exists:divisions,id'],
-            'role'             => ['required', 'in:super_admin,gm,manager,staff'],
-            'default_site_id'  => ['nullable', 'uuid', 'exists:sites,id'],
-            'password'         => ['nullable', 'string', 'min:8'],
-            'photo'            => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'name'               => ['required','string','max:150'],
+            'email'              => ['required','email','max:190','unique:users,email'],
+
+            'default_company_id' => ['nullable','uuid','exists:companies,id'],
+            'division_id'        => ['nullable','uuid','exists:divisions,id'],
+            'role'               => ['required','in:super_admin,gm,manager,staff'],
+
+            'default_site_id'    => ['nullable','uuid','exists:sites,id'],
+
+            'site_ids'           => ['nullable','array'],
+            'site_ids.*'         => ['uuid','exists:sites,id'],
+
+            'password'           => ['nullable','string','min:8'],
+            'photo'              => ['nullable','image','mimes:jpg,jpeg,png','max:2048'],
         ]);
 
         $plain = $data['password'] ?? Str::password(12);
 
-        // handle foto
-        $avatarPath = null;
+        $photoPath = null;
         if ($r->hasFile('photo')) {
-            $avatarPath = $r->file('photo')->store('avatars', 'public');
+            $photoPath = $r->file('photo')->store('avatars', 'public');
         }
 
-        $user = User::create([
-            'name'             => $data['name'],
-            'email'            => $data['email'],
-            'division_id'      => $data['division_id'] ?? null,
-            'role'             => $data['role'],
-            'default_site_id'  => $data['default_site_id'] ?? null,
-            'password'         => Hash::make($plain),
-            'avatar_path'      => $avatarPath, // pastikan kolom ada di tabel users
-        ]);
+        $payload = [
+            'name'            => $data['name'],
+            'email'           => $data['email'],
+            'division_id'     => $data['division_id'] ?? null,
+            'role'            => $data['role'],
+            'default_site_id' => $data['default_site_id'] ?? null,
+            'password'        => Hash::make($plain),
+        ];
 
-        if (function_exists('audit')) {
-            audit('user.create', [
-                'target_user_id'    => $user->id,
-                'target_user_email' => $user->email,
-                'by_user_id'        => auth()->id(),
-                'payload'           => [
-                    'division_id'     => $user->division_id,
-                    'role'            => $user->role,
-                    'default_site_id' => $user->default_site_id,
-                    'has_avatar'      => (bool)$avatarPath,
-                ],
-            ], User::class, $user->id);
+        if (Schema::hasColumn('users','default_company_id')) {
+            $payload['default_company_id'] = $data['default_company_id'] ?? session('company_id');
         }
 
-        // Redirect ke edit agar banner password tampil (sekali)
+        if ($photoPath) {
+            if (Schema::hasColumn('users','avatar_path')) $payload['avatar_path'] = $photoPath;
+            if (Schema::hasColumn('users','photo_path'))  $payload['photo_path']  = $photoPath;
+        }
+
+        if (Schema::hasColumn('users','allowed_site_ids')) {
+            $payload['allowed_site_ids'] = $data['site_ids'] ?? [];
+        }
+
+        $user = User::create($payload);
+
+        try {
+            if (method_exists($user, 'sites')) {
+                $user->sites()->sync($data['site_ids'] ?? []);
+            }
+        } catch (\Throwable $e) {}
+
         return redirect()->route('admin.users.edit', $user)->with([
             'generated_password' => $plain,
-            'status'             => 'User berhasil dibuat.',
+            'status' => 'User berhasil dibuat.',
         ]);
     }
 
     /**
-     * Halaman edit user.
+     * FORM EDIT USER
      */
     public function edit(User $user)
     {
-        $divisions = Division::orderBy('name')->get();
-        $sites     = Site::orderBy('code')->get(['id', 'code', 'name', 'region']);
+        $companyId = session('company_id');
 
-        return view('admin.users.edit', compact('user', 'divisions', 'sites'));
+        $user->load(['division','defaultSite','defaultCompany','sites']);
+
+        $companies = Company::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id','code','name']);
+
+        $divisions = Division::query()
+            ->when(
+                $companyId && Schema::hasColumn('divisions','company_id'),
+                function ($qb) use ($companyId) {
+                    $qb->where(function ($w) use ($companyId) {
+                        $w->where('company_id', $companyId)
+                          ->orWhereNull('company_id');
+                    });
+                }
+            )
+            ->orderBy('name')
+            ->get(['id','name']);
+
+        $sites = Site::query()
+            ->when(
+                $companyId && Schema::hasColumn('sites','company_id'),
+                fn($qb) => $qb->where('company_id', $companyId)
+            )
+            ->orderBy('code')
+            ->get(['id','code','name','region']);
+
+        return view('admin.users.edit', compact('user','companies','divisions','sites','companyId'));
     }
 
     /**
-     * Update division.
+     * UPDATE USER UTAMA
      */
+    public function update(Request $r, User $user): RedirectResponse
+    {
+        $data = $r->validate([
+            'name'               => ['required','string','max:150'],
+            'email'              => ['required','email','max:190', Rule::unique('users','email')->ignore($user->id)],
+
+            'default_company_id' => ['nullable','uuid','exists:companies,id'],
+            'division_id'        => ['nullable','uuid','exists:divisions,id'],
+            'role'               => ['required','in:super_admin,gm,manager,staff'],
+
+            'default_site_id'    => ['nullable','uuid','exists:sites,id'],
+
+            'site_ids'           => ['nullable','array'],
+            'site_ids.*'         => ['uuid','exists:sites,id'],
+
+            'password'           => ['nullable','string','min:8'],
+        ]);
+
+        $payload = [
+            'name'            => $data['name'],
+            'email'           => $data['email'],
+            'division_id'     => $data['division_id'] ?? null,
+            'role'            => $data['role'],
+            'default_site_id' => $data['default_site_id'] ?? null,
+        ];
+
+        if (Schema::hasColumn('users','default_company_id')) {
+            $payload['default_company_id'] = $data['default_company_id'] ?? null;
+        }
+
+        if (!empty($data['password'])) {
+            $payload['password'] = Hash::make($data['password']);
+        }
+
+        if (Schema::hasColumn('users','allowed_site_ids')) {
+            $payload['allowed_site_ids'] = $data['site_ids'] ?? [];
+        }
+
+        $user->update($payload);
+
+        try {
+            if (method_exists($user,'sites')) {
+                $user->sites()->sync($data['site_ids'] ?? []);
+            }
+        } catch (\Throwable $e) {}
+
+        return back()->with('status', 'User berhasil diperbarui.');
+    }
+
     public function updateDivision(Request $request, User $user): RedirectResponse
     {
         $data = $request->validate([
-            'division_id' => ['nullable', 'uuid', Rule::exists('divisions', 'id')],
+            'division_id' => ['nullable','uuid', Rule::exists('divisions','id')],
         ]);
 
-        $before = [
-            'division_id'   => $user->getOriginal('division_id'),
-            'division_name' => optional($user->division)->name,
-        ];
-
         $user->update(['division_id' => $data['division_id'] ?? null]);
-        $user->load('division');
-
-        $after = [
-            'division_id'   => $user->division_id,
-            'division_name' => optional($user->division)->name,
-        ];
-
-        if (function_exists('audit')) {
-            audit('user.update_division', [
-                'target_user_id'   => $user->id,
-                'target_user_name' => $user->name,
-                'before'           => $before,
-                'after'            => $after,
-            ], User::class, $user->id);
-        }
-
         return back()->with('status', 'Division updated.');
     }
 
-    /**
-     * Update default site.
-     */
     public function updateSite(Request $request, User $user): RedirectResponse
     {
         $data = $request->validate([
-            'default_site_id' => ['nullable', 'uuid', Rule::exists('sites', 'id')],
+            'default_site_id' => ['nullable','uuid', Rule::exists('sites','id')],
         ]);
 
-        $before = $user->getOriginal('default_site_id');
         $user->update(['default_site_id' => $data['default_site_id'] ?? null]);
-        $after  = $user->default_site_id;
-
-        if (function_exists('audit')) {
-            audit('user.update_default_site', [
-                'target_user_id'   => $user->id,
-                'target_user_name' => $user->name,
-                'before'           => $before,
-                'after'            => $after,
-            ], User::class, $user->id);
-        }
-
         return back()->with('status', 'Default site updated.');
     }
 
-    /**
-     * Reset password: auto-generate & flash plaintext sekali.
-     */
     public function resetPassword(User $user): RedirectResponse
     {
         $newPassword = Str::password(14);
-
         $user->forceFill(['password' => Hash::make($newPassword)])->save();
-
-        if (function_exists('audit')) {
-            audit('user.reset_password_generated', [
-                'target_user_id'    => $user->id,
-                'target_user_email' => $user->email,
-                'by_user_id'        => auth()->id(),
-                'note'              => 'Password regenerated by admin. Plaintext not stored.',
-            ], User::class, $user->id);
-        }
 
         return back()->with('generated_password', $newPassword);
     }
 
-    /**
-     * Upload/replace foto avatar user.
-     */
     public function updatePhoto(Request $request, User $user): RedirectResponse
     {
         $request->validate([
-            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'photo' => ['required','image','mimes:jpg,jpeg,png','max:2048'],
         ]);
 
-        // Hapus avatar lama (jika ada)
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
+        foreach (['avatar_path','photo_path'] as $col) {
+            if (Schema::hasColumn('users',$col) && $user->{$col}) {
+                Storage::disk('public')->delete($user->{$col});
+            }
         }
 
-        $path = $request->file('photo')->store('avatars', 'public');
+        $path = $request->file('photo')->store('avatars','public');
 
-        $user->forceFill([
-            'avatar_path' => $path,
-            // jika pakai field lain, bisa dikosongkan:
-            // 'photo_url' => null,
-            // 'profile_photo_path' => null,
-        ])->save();
+        $fill = [];
+        if (Schema::hasColumn('users','avatar_path')) $fill['avatar_path'] = $path;
+        if (Schema::hasColumn('users','photo_path'))  $fill['photo_path']  = $path;
 
-        if (function_exists('audit')) {
-            audit('user.update_photo', [
-                'target_user_id'   => $user->id,
-                'target_user_name' => $user->name,
-                'by_user_id'       => auth()->id(),
-                'path'             => $path,
-            ], User::class, $user->id);
-        }
+        $user->forceFill($fill)->save();
 
-        return back()->with('status', 'Foto berhasil diperbarui.');
+        return back()->with('status','Foto berhasil diperbarui.');
     }
 
-    /**
-     * Hapus foto avatar user.
-     */
     public function deletePhoto(User $user): RedirectResponse
     {
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
+        foreach (['avatar_path','photo_path'] as $col) {
+            if (Schema::hasColumn('users',$col) && $user->{$col}) {
+                Storage::disk('public')->delete($user->{$col});
+            }
         }
 
-        $user->forceFill([
-            'avatar_path' => null,
-            // 'photo_url' => null,
-            // 'profile_photo_path' => null,
-        ])->save();
+        $fill = [];
+        if (Schema::hasColumn('users','avatar_path')) $fill['avatar_path'] = null;
+        if (Schema::hasColumn('users','photo_path'))  $fill['photo_path']  = null;
 
-        if (function_exists('audit')) {
-            audit('user.delete_photo', [
-                'target_user_id'   => $user->id,
-                'target_user_name' => $user->name,
-                'by_user_id'       => auth()->id(),
-            ], User::class, $user->id);
-        }
+        $user->forceFill($fill)->save();
 
-        return back()->with('status', 'Foto berhasil dihapus.');
+        return back()->with('status','Foto berhasil dihapus.');
     }
 
-    /**
-     * Soft delete user.
-     */
     public function destroy(User $user): RedirectResponse
     {
         if ($user->id === auth()->id()) {
-            return back()->with('status', 'Tidak boleh menghapus akun sendiri.');
+            return back()->with('status','Tidak boleh menghapus akun sendiri.');
         }
 
-        $user->delete(); // soft delete
-
-        if (function_exists('audit')) {
-            audit('user.delete', [
-                'target_user_id'    => $user->id,
-                'target_user_email' => $user->email,
-                'by_user_id'        => auth()->id(),
-            ], User::class, $user->id);
+        // ✅ kalau model pakai SoftDeletes -> delete()
+        // ✅ kalau gak -> forceDelete()
+        if (in_array(SoftDeletes::class, class_uses_recursive(User::class))) {
+            $user->delete();
+        } else {
+            $user->forceDelete();
         }
 
-        return redirect()->route('admin.users.index')->with('status', 'User berhasil dihapus.');
+        return redirect()->route('admin.users.index')->with('status','User berhasil dihapus.');
     }
 }

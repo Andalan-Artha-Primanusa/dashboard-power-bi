@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Company;
 
 class Site extends Model
 {
@@ -37,7 +38,10 @@ class Site extends Model
         return $this->belongsToMany(User::class, 'site_user', 'site_id', 'user_id')
             ->withTimestamps();
     }
-
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id', 'id');
+    }
     public function defaultForUsers()
     {
         return $this->hasMany(User::class, 'default_site_id');
@@ -74,6 +78,6 @@ class Site extends Model
 
     public function getLabelAttribute(): string
     {
-        return trim(($this->code ?? 'SITE').' — '.($this->name ?? ''));
+        return trim(($this->code ?? 'SITE') . ' — ' . ($this->name ?? ''));
     }
 }
