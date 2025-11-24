@@ -19,28 +19,128 @@ class PowerBiDemoSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            // =========================
-            // Divisions
-            // =========================
-            $ops = Division::firstOrCreate(
-                ['code' => 'OPS'],
-                ['id' => (string) Str::uuid(), 'name' => 'Operations']
-            );
-            if ($ops->name !== 'Operations') {
-                $ops->forceFill(['name' => 'Operations'])->save();
+
+            // =====================================================
+            // Companies (opsional, auto-skip kalau table/model ga ada)
+            // =====================================================
+            $companyByCode = [];
+            $hasCompanyModel = false;
+            $CompanyClass = null;
+
+            try {
+                $hasCompanyModel = class_exists(\App\Models\Company::class);
+                if ($hasCompanyModel) {
+                    $CompanyClass = \App\Models\Company::class;
+                }
+            } catch (\Throwable $e) {
+                $hasCompanyModel = false;
             }
 
-            $hr = Division::firstOrCreate(
-                ['code' => 'HR'],
-                ['id' => (string) Str::uuid(), 'name' => 'Human Resource']
-            );
-            if ($hr->name !== 'Human Resource') {
-                $hr->forceFill(['name' => 'Human Resource'])->save();
+            if (Schema::hasTable('companies')) {
+
+                $companyColumns = Schema::getColumnListing('companies');
+                $filterCompany = function(array $data) use ($companyColumns) {
+                    return array_filter(
+                        $data,
+                        fn($v, $k) => in_array($k, $companyColumns, true),
+                        ARRAY_FILTER_USE_BOTH
+                    );
+                };
+
+                $rawCompanies = [
+                    ['code' => 'AAP', 'name' => 'PT Andalan Artha Primanusa',  'is_active' => true],
+                    ['code' => 'ABN', 'name' => 'PT Andalan Bhumi Nusantara', 'is_active' => true],
+                    ['code' => 'ABC', 'name' => 'PT Andalan Bhumi Cakrawala', 'is_active' => true],
+                ];
+
+                foreach ($rawCompanies as $c) {
+                    if ($hasCompanyModel) {
+                        $company = $CompanyClass::firstOrCreate(
+                            $filterCompany(['code' => $c['code']]),
+                            $filterCompany([
+                                'id'        => (string) Str::uuid(),
+                                'name'      => $c['name'],
+                                'is_active' => (bool) ($c['is_active'] ?? true),
+                            ])
+                        );
+
+                        $company->fill($filterCompany([
+                            'name'      => $c['name'],
+                            'is_active' => (bool) ($c['is_active'] ?? true),
+                        ]))->save();
+
+                        $companyByCode[$c['code']] = $company;
+                    } else {
+                        $existing = DB::table('companies')->where('code', $c['code'])->first();
+
+                        if (!$existing) {
+                            DB::table('companies')->insert(
+                                $filterCompany([
+                                    'id'         => (string) Str::uuid(),
+                                    'code'       => $c['code'],
+                                    'name'       => $c['name'],
+                                    'is_active'  => (bool) ($c['is_active'] ?? true),
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ])
+                            );
+                            $existing = DB::table('companies')->where('code', $c['code'])->first();
+                        } else {
+                            DB::table('companies')->where('id', $existing->id)->update(
+                                $filterCompany([
+                                    'name'       => $c['name'],
+                                    'is_active'  => (bool) ($c['is_active'] ?? true),
+                                    'updated_at' => now(),
+                                ])
+                            );
+                        }
+
+                        $companyByCode[$c['code']] = $existing;
+                    }
+                }
             }
 
-            // =========================
+            $allCompanyIds = collect($companyByCode)->pluck('id')->values()->all();
+            $abnCompanyId  = $companyByCode['ABN']->id ?? null;
+
+            // =====================================================
+            // Divisions (sesuai list gambar)
+            // =====================================================
+            $rawDivisions = [
+                ['code' => 'ACI',   'name' => 'Asset, Commercial, and Insurance'],
+                ['code' => 'ENG',   'name' => 'Engineering'],
+                ['code' => 'FIN',   'name' => 'Finance'],
+                ['code' => 'HRGA',  'name' => 'HRGA'],
+                ['code' => 'IT',    'name' => 'IT'],
+                ['code' => 'OPS',   'name' => 'Operation'],
+                ['code' => 'PLANT', 'name' => 'Plant'],
+                ['code' => 'SCM',   'name' => 'SCM'],
+                ['code' => 'SHE',   'name' => 'SHE'],
+            ];
+
+            $divisionByCode = [];
+            foreach ($rawDivisions as $d) {
+                $div = Division::firstOrCreate(
+                    ['code' => $d['code']],
+                    [
+                        'id'   => (string) Str::uuid(),
+                        'name' => $d['name'],
+                    ]
+                );
+
+                if ($div->name !== $d['name']) {
+                    $div->forceFill(['name' => $d['name']])->save();
+                }
+
+                $divisionByCode[$d['code']] = $div;
+            }
+
+            $ops  = $divisionByCode['OPS'];
+            $hrga = $divisionByCode['HRGA'];
+
+            // =====================================================
             // Sites
-            // =========================
+            // =====================================================
             $rawSites = [
                 ['code' => 'HO',  'name' => 'Head Office Jakarta', 'region' => 'Jakarta',           'is_active' => true],
                 ['code' => 'DBK', 'name' => 'DBK – Kalteng',       'region' => 'Kalimantan Tengah', 'is_active' => true],
@@ -50,28 +150,38 @@ class PowerBiDemoSeeder extends Seeder
 
             $siteByCode = [];
             foreach ($rawSites as $s) {
+
+                $payload = [
+                    'id'         => (string) Str::uuid(),
+                    'name'       => $s['name'],
+                    'region'     => $s['region'] ?? null,
+                    'address'    => null,
+                    'lat'        => null,
+                    'lng'        => null,
+                    'is_active'  => (bool) ($s['is_active'] ?? true),
+                    'config'     => null,
+                    'created_by' => null,
+                ];
+
+                if ($abnCompanyId && Schema::hasColumn('sites', 'company_id')) {
+                    $payload['company_id'] = $abnCompanyId;
+                }
+
                 $site = Site::firstOrCreate(
                     ['code' => $s['code']],
-                    [
-                        'id'         => (string) Str::uuid(),
-                        'name'       => $s['name'],
-                        'region'     => $s['region'] ?? null,
-                        'address'    => null,
-                        'lat'        => null,
-                        'lng'        => null,
-                        'is_active'  => (bool) ($s['is_active'] ?? true),
-                        'config'     => null,
-                        'created_by' => null,
-                    ]
+                    $payload
                 );
 
-                // Keep name/region/active in sync on subsequent runs
-                $site->fill([
+                $sync = [
                     'name'      => $s['name'],
                     'region'    => $s['region'] ?? null,
                     'is_active' => (bool) ($s['is_active'] ?? true),
-                ])->save();
+                ];
+                if ($abnCompanyId && Schema::hasColumn('sites', 'company_id')) {
+                    $sync['company_id'] = $abnCompanyId;
+                }
 
+                $site->fill($sync)->save();
                 $siteByCode[$s['code']] = $site;
             }
 
@@ -79,37 +189,46 @@ class PowerBiDemoSeeder extends Seeder
             $dbkId      = $siteByCode['DBK']->id;
             $hoId       = $siteByCode['HO']->id;
 
-            // Pastikan folder avatars tersedia
             Storage::disk('public')->makeDirectory('avatars');
 
-            // =========================
+            // =====================================================
             // Users (+ default_site_id & allowed_site_ids)
-            // =========================
+            // =====================================================
+            $fillCompanyForUser = function(array $base) use ($abnCompanyId, $allCompanyIds) {
+                if ($abnCompanyId && Schema::hasColumn('users', 'default_company_id')) {
+                    $base['default_company_id'] = $abnCompanyId;
+                }
+                if (!empty($allCompanyIds) && Schema::hasColumn('users', 'allowed_company_ids')) {
+                    $base['allowed_company_ids'] = $allCompanyIds;
+                }
+                return $base;
+            };
+
             // Super Admin
             $super = User::firstOrCreate(
                 ['email' => 'admin@local.test'],
-                [
+                $fillCompanyForUser([
                     'id'              => (string) Str::uuid(),
                     'name'            => 'Super Admin',
                     'password'        => Hash::make('password123'),
-                    'division_id'     => $hr->id,
+                    'division_id'     => $hrga->id,
                     'role'            => 'super_admin',
                     'default_site_id' => $hoId,
-                    'photo_path'      => null, // diisi setelah avatar dibuat
-                ]
+                    'photo_path'      => null,
+                ])
             );
-            $super->forceFill([
-                'division_id'      => $hr->id,
+            $super->forceFill($fillCompanyForUser([
+                'division_id'      => $hrga->id,
                 'role'             => 'super_admin',
                 'default_site_id'  => $hoId,
-                'allowed_site_ids' => $allSiteIds, // semua site
-            ])->save();
-            $this->ensureAvatar($super, bg: '#7f1d1d', fg: '#fef3c7'); // maroon / gold
+                'allowed_site_ids' => $allSiteIds,
+            ]))->save();
+            $this->ensureAvatar($super, bg: '#7f1d1d', fg: '#fef3c7');
 
             // GM
             $gm = User::firstOrCreate(
                 ['email' => 'gm@andalan.local'],
-                [
+                $fillCompanyForUser([
                     'id'              => (string) Str::uuid(),
                     'name'            => 'General Manager',
                     'password'        => Hash::make('password'),
@@ -117,20 +236,20 @@ class PowerBiDemoSeeder extends Seeder
                     'role'            => 'gm',
                     'default_site_id' => $dbkId,
                     'photo_path'      => null,
-                ]
+                ])
             );
-            $gm->forceFill([
+            $gm->forceFill($fillCompanyForUser([
                 'division_id'      => $ops->id,
                 'role'             => 'gm',
                 'default_site_id'  => $dbkId,
-                'allowed_site_ids' => $allSiteIds, // semua site
-            ])->save();
-            $this->ensureAvatar($gm, bg: '#0f766e', fg: '#ecfeff'); // teal / soft
+                'allowed_site_ids' => $allSiteIds,
+            ]))->save();
+            $this->ensureAvatar($gm, bg: '#0f766e', fg: '#ecfeff');
 
             // Operator
             $op = User::firstOrCreate(
                 ['email' => 'user@andalan.local'],
-                [
+                $fillCompanyForUser([
                     'id'              => (string) Str::uuid(),
                     'name'            => 'Operator Site',
                     'password'        => Hash::make('password'),
@@ -138,33 +257,29 @@ class PowerBiDemoSeeder extends Seeder
                     'role'            => 'user',
                     'default_site_id' => $dbkId,
                     'photo_path'      => null,
-                ]
+                ])
             );
-            $op->forceFill([
+            $op->forceFill($fillCompanyForUser([
                 'division_id'      => $ops->id,
                 'role'             => 'user',
                 'default_site_id'  => $dbkId,
-                'allowed_site_ids' => [$dbkId], // hanya DBK
-            ])->save();
-            $this->ensureAvatar($op, bg: '#0b1b3f', fg: '#e0f2fe'); // navy / sky
+                'allowed_site_ids' => [$dbkId],
+            ]))->save();
+            $this->ensureAvatar($op, bg: '#0b1b3f', fg: '#e0f2fe');
 
-            // =========================
+            // =====================================================
             // (Opsional) Relasi user <-> sites via pivot "site_user"
-            // =========================
+            // =====================================================
             if (Schema::hasTable('site_user')) {
                 $ids = collect($siteByCode)->pluck('id')->all();
-
-                // Super Admin & GM: semua site
                 $super->sites()->syncWithoutDetaching($ids);
                 $gm->sites()->syncWithoutDetaching($ids);
-
-                // Operator: hanya DBK
                 $op->sites()->syncWithoutDetaching([$dbkId]);
             }
 
-            // =========================
+            // =====================================================
             // Power BI Reports (demo)
-            // =========================
+            // =====================================================
             $r1 = PowerBiReport::firstOrCreate(
                 ['name' => 'KPI Produksi Bulanan'],
                 [
@@ -205,30 +320,23 @@ class PowerBiDemoSeeder extends Seeder
                 'allow_client_download' => false,
             ])->save();
 
-            // Grant akses per-user
             if (Schema::hasTable('powerbi_report_user')) {
                 $r1->users()->syncWithoutDetaching([$op->id, $gm->id, $super->id]);
                 $r2->users()->syncWithoutDetaching([$super->id]);
             }
 
-            // Grant akses per-division
             if (Schema::hasTable('powerbi_report_division')) {
                 $r1->divisions()->syncWithoutDetaching([$ops->id]);
-                $r2->divisions()->syncWithoutDetaching([$hr->id]);
+                $r2->divisions()->syncWithoutDetaching([$hrga->id]);
             }
 
-            // Grant akses per-site
             if (Schema::hasTable('powerbi_report_site')) {
-                // r1 untuk DBK & HO, r2 untuk HO
                 $r1->sites()->syncWithoutDetaching([$dbkId, $hoId]);
                 $r2->sites()->syncWithoutDetaching([$hoId]);
             }
         });
     }
 
-    /**
-     * Pastikan user punya avatar SVG di storage/public/avatars dan simpan path ke photo_path.
-     */
     protected function ensureAvatar(User $user, string $bg = '#0f766e', string $fg = '#ffffff'): void
     {
         $initial = mb_strtoupper(mb_substr($user->name ?? 'U', 0, 1));
@@ -245,12 +353,8 @@ class PowerBiDemoSeeder extends Seeder
         }
     }
 
-    /**
-     * Generate SVG avatar sederhana dengan inisial.
-     */
     protected function makeAvatarSvg(string $initial, string $bg, string $fg): string
     {
-        // 256x256, rounded
         return <<<SVG
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="{$initial}">
