@@ -1,108 +1,207 @@
+{{-- resources/views/admin/powerbi/create.blade.php --}}
 @extends('layouts.app')
 @section('title','Tambah Power BI')
 
 @section('content')
-<div class="max-w-4xl mx-auto rounded-3xl overflow-hidden shadow ring-1 ring-slate-200 bg-white">
+<div class="max-w-5xl mx-auto space-y-6">
 
-  {{-- HEADER (maroon only, konsisten ARCA) --}}
-  <div class="px-6 py-7 text-white relative overflow-hidden">
-    {{-- Base gradient --}}
-    <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600"></div>
-    {{-- White sheen --}}
+  {{-- HEADER MAROON (seragam ARCA) --}}
+  <div class="relative overflow-hidden rounded-3xl ring-1 ring-white/40 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600">
+    {{-- Base gradient & highlight --}}
     <div class="absolute inset-0 opacity-25 bg-[radial-gradient(70%_70%_at_10%_10%,_rgba(255,255,255,0.5)_0%,_transparent_60%)]"></div>
-    {{-- Soft overlay --}}
     <div class="absolute -top-16 -right-16 size-64 rounded-full bg-white/10 blur-3xl"></div>
 
-    <div class="relative">
-      <h1 class="text-2xl font-bold tracking-tight">ARCA</h1>
-      <p class="text-white/85 text-sm mt-1">🆕 Tambah Report Power BI baru</p>
+    <div class="relative px-6 py-6 sm:px-8 sm:py-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-white">
+      <div class="space-y-1">
+        <div class="inline-flex items-center gap-2 text-[11px] font-semibold text-white/85 uppercase tracking-wide">
+          <span class="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-white/20 ring-1 ring-white/30">
+            <img src="{{ asset('assets/images/logoarca.png') }}" alt="ARCA" class="h-4 w-4 object-contain">
+          </span>
+          <span>ARCA — Power BI</span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
+          🆕 Tambah Power BI Report
+        </h1>
+        <p class="text-xs sm:text-sm text-white/80 max-w-xl">
+          Daftarkan report Power BI baru dan atur hak akses embed-nya.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2 justify-start sm:justify-end">
+        <a href="{{ route('admin.powerbi.index') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-semibold hover:bg-white/20 ring-1 ring-white/40">
+          <span class="text-lg leading-none">←</span>
+          <span>Kembali ke daftar</span>
+        </a>
+      </div>
     </div>
   </div>
 
+  {{-- ALERT ERROR --}}
+  @if ($errors->any())
+    <div class="relative rounded-2xl border border-rose-200 bg-rose-50/90 ring-1 ring-rose-100 shadow-sm">
+      <div class="flex items-start gap-3 p-4">
+        <svg class="h-5 w-5 text-rose-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-width="2" d="M12 9v4m0 4h.01"/>
+          <path stroke-width="2" d="M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+        </svg>
+        <div class="text-sm text-rose-900">
+          <div class="font-semibold mb-1">Form masih ada error:</div>
+          <ul class="list-disc ml-5 space-y-0.5">
+            @foreach ($errors->all() as $e)
+              <li>{{ $e }}</li>
+            @endforeach
+          </ul>
+        </div>
+      </div>
+      <div class="h-1 w-full bg-gradient-to-r from-rose-500 via-rose-400 to-rose-600"></div>
+    </div>
+  @endif
+
   {{-- FORM --}}
-  <form method="POST" action="{{ route('admin.powerbi.store') }}" class="p-6 space-y-6">
+  <form method="POST" action="{{ route('admin.powerbi.store') }}" class="space-y-6">
     @csrf
 
-    {{-- Informasi utama --}}
-    <div class="p-5 rounded-2xl ring-1 ring-slate-200 space-y-4 bg-slate-50/40">
-      <label class="block text-sm font-medium text-slate-700">
-        Nama
-        <input name="name" class="mt-1 w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700" required>
-      </label>
-      <label class="block text-sm font-medium text-slate-700">
-        Embed URL
-        <input name="embed_url" type="url" class="mt-1 w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700" required>
-      </label>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" name="show_filter_pane" value="1" class="rounded text-maroon-700 focus:ring-maroon-600">
-          Filter Pane
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" name="show_nav_pane" value="1" checked class="rounded text-maroon-700 focus:ring-maroon-600">
-          Nav Pane
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" name="show_toolbar" value="1" checked class="rounded text-maroon-700 focus:ring-maroon-600">
-          Toolbar
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" name="allow_client_download" value="1" checked class="rounded text-maroon-700 focus:ring-maroon-600">
-          Client Download
-        </label>
+    {{-- Informasi utama (card dengan accent bar kiri) --}}
+    <div class="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100/80">
+      {{-- accent bar kiri --}}
+      <div class="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-maroon-700 via-maroon-600 to-maroon-700"></div>
+
+      <div class="px-6 py-6 sm:px-8 sm:py-7 space-y-6">
+        {{-- header kecil --}}
+        <div class="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div>
+            <h2 class="text-sm font-semibold tracking-wide text-slate-700 uppercase">
+              Informasi Utama
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Nama dan URL embed dari report Power BI.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <label class="block text-sm font-medium text-slate-700">
+            Nama
+            <input
+              name="name"
+              value="{{ old('name') }}"
+              class="mt-1 w-full rounded-2xl border border-sky-200 bg-white
+                     px-4 py-2.5 text-sm text-slate-700 shadow-sm
+                     focus:outline-none focus:ring-2 focus:ring-sky-300/70 focus:border-sky-400"
+              required>
+            @error('name')<p class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
+          </label>
+
+          <label class="block text-sm font-medium text-slate-700">
+            Embed URL
+            <input
+              name="embed_url"
+              type="url"
+              value="{{ old('embed_url') }}"
+              class="mt-1 w-full rounded-2xl border border-sky-200 bg-white
+                     px-4 py-2.5 text-sm text-slate-700 shadow-sm
+                     focus:outline-none focus:ring-2 focus:ring-sky-300/70 focus:border-sky-400"
+              required>
+            @error('embed_url')<p class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
+          </label>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" name="show_filter_pane" value="1"
+                     class="rounded border-slate-300 text-maroon-700 focus:ring-maroon-600/30"
+                     @checked(old('show_filter_pane', false))>
+              <span>Filter Pane</span>
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" name="show_nav_pane" value="1"
+                     class="rounded border-slate-300 text-maroon-700 focus:ring-maroon-600/30"
+                     @checked(old('show_nav_pane', true))>
+              <span>Nav Pane</span>
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" name="show_toolbar" value="1"
+                     class="rounded border-slate-300 text-maroon-700 focus:ring-maroon-600/30"
+                     @checked(old('show_toolbar', true))>
+              <span>Toolbar</span>
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" name="allow_client_download" value="1"
+                     class="rounded border-slate-300 text-maroon-700 focus:ring-maroon-600/30"
+                     @checked(old('allow_client_download', true))>
+              <span>Client Download</span>
+            </label>
+          </div>
+        </div>
       </div>
     </div>
 
     {{-- Granting section --}}
-    <div class="p-5 rounded-2xl ring-1 ring-slate-200 grid md:grid-cols-3 gap-6 bg-slate-50/40">
+    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100/80 p-6 sm:p-7 grid md:grid-cols-3 gap-6">
       {{-- User --}}
       <div>
-        <h3 class="font-semibold text-slate-800 mb-2">👤 Bagikan ke User</h3>
-        <div class="max-h-64 overflow-auto space-y-1">
+        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide">👤 Bagikan ke User</h3>
+        <div class="max-h-64 overflow-auto space-y-1 pr-1">
           @foreach($users as $u)
             <label class="flex items-center gap-2 text-sm text-slate-700">
-              <input type="checkbox" name="user_ids[]" value="{{ $u->id }}" class="rounded text-maroon-700 focus:ring-maroon-600">
-              {{ $u->name }} <span class="text-slate-500">({{ $u->email }})</span>
+              <input
+                type="checkbox"
+                name="user_ids[]" value="{{ $u->id }}"
+                class="rounded border-slate-300 text-maroon-700 focus:ring-maroon-600/30"
+                @checked(in_array($u->id, old('user_ids', [])))>
+              <span class="truncate">{{ $u->name }}</span>
+              <span class="text-slate-500 truncate">({{ $u->email }})</span>
             </label>
           @endforeach
         </div>
+        @error('user_ids')<p class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
       </div>
 
       {{-- Divisi --}}
       <div>
-        <h3 class="font-semibold text-slate-800 mb-2">🏢 Bagikan ke Divisi</h3>
-        <div class="max-h-64 overflow-auto space-y-1">
+        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide">🏢 Bagikan ke Divisi</h3>
+        <div class="max-h-64 overflow-auto space-y-1 pr-1">
           @foreach($divisions as $d)
             <label class="flex items-center gap-2 text-sm text-slate-700">
-              <input type="checkbox" name="division_ids[]" value="{{ $d->id }}" class="rounded text-maroon-700 focus:ring-maroon-600">
-              {{ $d->name }}
+              <input
+                type="checkbox"
+                name="division_ids[]" value="{{ $d->id }}"
+                class="rounded border-slate-300 text-maroon-700 focus:ring-maroon-600/30"
+                @checked(in_array($d->id, old('division_ids', [])))>
+              <span class="truncate">{{ $d->name }}</span>
             </label>
           @endforeach
         </div>
+        @error('division_ids')<p class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
       </div>
 
       {{-- Site --}}
       <div>
-        <h3 class="font-semibold text-slate-800 mb-2">📍 Bagikan ke Site</h3>
-        <div class="max-h-64 overflow-auto space-y-1">
+        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide">📍 Bagikan ke Site</h3>
+        <div class="max-h-64 overflow-auto space-y-1 pr-1">
           @foreach($sites as $s)
             <label class="flex items-center gap-2 text-sm text-slate-700">
-              <input type="checkbox" name="site_ids[]" value="{{ $s->id }}" class="rounded text-maroon-700 focus:ring-maroon-600">
-              {{ $s->code }} — {{ $s->name }}
+              <input
+                type="checkbox"
+                name="site_ids[]" value="{{ $s->id }}"
+                class="rounded border-slate-300 text-maroon-700 focus:ring-maroon-600/30"
+                @checked(in_array($s->id, old('site_ids', [])))>
+              <span class="truncate">{{ $s->code }} — {{ $s->name }}</span>
             </label>
           @endforeach
         </div>
+        @error('site_ids')<p class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
       </div>
     </div>
 
     {{-- Tombol --}}
     <div class="flex items-center justify-end gap-3">
       <a href="{{ route('admin.powerbi.index') }}"
-         class="px-4 py-2 rounded-xl text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+         class="px-4 py-2 rounded-xl text-sm font-medium text-slate-700 ring-1 ring-slate-200 bg-white hover:bg-slate-50">
         Batal
       </a>
       <button
-        class="px-4 py-2 rounded-xl bg-maroon-700 text-white font-semibold hover:bg-maroon-800 ring-1 ring-maroon-900/20">
+        class="px-4 py-2 rounded-xl bg-maroon-700 text-white text-sm font-semibold hover:bg-maroon-800 shadow ring-1 ring-maroon-900/20">
         Simpan
       </button>
     </div>

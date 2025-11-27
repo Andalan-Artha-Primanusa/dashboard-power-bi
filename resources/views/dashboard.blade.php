@@ -3,63 +3,95 @@
 @section('title','Dashboard')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-maroon-950 via-maroon-900 to-white py-8">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+<div class="min-h-screen bg-[#edf3fb] py-6">
+  {{-- wrapper full-width mengikuti main (tanpa max-w lagi) --}}
+  <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 space-y-8">
 
     {{-- HERO STRIP (Maroon • Putih) --}}
-    <div class="relative overflow-hidden rounded-3xl ring-1 ring-white/10">
+    <div class="relative overflow-hidden rounded-3xl ring-1 ring-[#ffffff]/40">
+      {{-- gradient maroon brand --}}
       <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600"></div>
-      <div class="absolute inset-0 opacity-25 bg-[radial-gradient(90%_70%_at_2%_0%,_rgba(255,255,255,0.6),_transparent_60%)]"></div>
+      <div class="absolute inset-0 opacity-25 bg-[radial-gradient(90%_70%_at_0%_0%,_rgba(255,255,255,0.55),_transparent_60%)]"></div>
+
       <div class="relative px-6 py-8 sm:px-10 sm:py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6 text-white">
-        <div>
-          <div class="text-white/90 text-sm">ARCA</div>
-          <h1 class="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight">Executive Dashboard</h1>
-          <p class="mt-2 text-white/80 text-sm max-w-xl">Snapshot ringkas Power BI, Sites, pengguna, serta distribusi division. Semua dikemas simpel & elegan.</p>
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 text-[11px] font-semibold text-white/85 uppercase tracking-wide">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-white/20 ring-1 ring-white/30">
+              <img src="{{ asset('assets/images/logoarca.png') }}" alt="ARCA" class="h-4 w-4 object-contain">
+            </span>
+            <span>ARCA — Executive View</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Executive Dashboard
+          </h1>
+          <p class="text-white/80 text-sm max-w-xl">
+            Snapshot ringkas Power BI, Sites, pengguna, serta distribusi division. Semua dikemas simpel &amp; elegan.
+          </p>
         </div>
-        <div class="flex gap-3">
-          <div class="px-4 py-2 rounded-xl bg-white/85 text-maroon-900 font-semibold shadow-sm pointer-events-none cursor-not-allowed select-none">
-            Lihat Semua Dashboards
-          </div>
-          <div class="px-4 py-2 rounded-xl bg-black/20 text-white font-semibold ring-1 ring-white/20 pointer-events-none cursor-not-allowed select-none">
-            Refresh
-          </div>
+
+        <div class="flex flex-wrap gap-3 justify-start md:justify-end">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-maroon-900 font-semibold shadow-sm text-sm
+                   cursor-not-allowed pointer-events-none select-none"
+          >
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-maroon-100 text-maroon-800 text-[11px]">📊</span>
+            <span>Lihat Semua Dashboards</span>
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/15 text-white font-semibold ring-1 ring-white/25 text-sm
+                   cursor-not-allowed pointer-events-none select-none"
+          >
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-white/10 text-white text-[11px]">⟳</span>
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
     </div>
 
     {{-- KPI CARDS --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="group rounded-2xl bg-white/80 backdrop-blur ring-1 ring-maroon-900/10 p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
+      <div class="group rounded-2xl bg-white/95 backdrop-blur ring-1 ring-maroon-900/10 p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">Power BI Reports</div>
-          <div class="h-9 w-9 grid place-items-center rounded-xl bg-slate-100 text-maroon-900">📊</div>
+          <div class="h-9 w-9 grid place-items-center rounded-xl bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
+            📊
+          </div>
         </div>
         <div class="mt-1 text-3xl font-extrabold text-slate-900">{{ number_format($totalReports) }}</div>
         <div class="mt-1 text-xs text-slate-500">Total report terdaftar</div>
       </div>
 
-      <div class="group rounded-2xl bg-white/80 backdrop-blur ring-1 ring-maroon-900/10 p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
+      <div class="group rounded-2xl bg-white/95 backdrop-blur ring-1 ring-maroon-900/10 p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">Sites</div>
-          <div class="h-9 w-9 grid place-items-center rounded-xl bg-slate-100 text-maroon-900">🗺️</div>
+          <div class="h-9 w-9 grid place-items-center rounded-xl bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
+            🗺️
+          </div>
         </div>
         <div class="mt-1 text-3xl font-extrabold text-slate-900">{{ number_format($totalSites) }}</div>
         <div class="mt-1 text-xs text-slate-500">Site aktif</div>
       </div>
 
-      <div class="group rounded-2xl bg-white/80 backdrop-blur ring-1 ring-maroon-900/10 p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
+      <div class="group rounded-2xl bg-white/95 backdrop-blur ring-1 ring-maroon-900/10 p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">Users</div>
-          <div class="h-9 w-9 grid place-items-center rounded-xl bg-slate-100 text-maroon-900">👥</div>
+          <div class="h-9 w-9 grid place-items-center rounded-xl bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
+            👥
+          </div>
         </div>
         <div class="mt-1 text-3xl font-extrabold text-slate-900">{{ number_format($totalUsers) }}</div>
         <div class="mt-1 text-xs text-slate-500">Akun terdaftar</div>
       </div>
 
-      <div class="group rounded-2xl bg-white/80 backdrop-blur ring-1 ring-maroon-900/10 p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
+      <div class="group rounded-2xl bg-white/95 backdrop-blur ring-1 ring-maroon-900/10 p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">Divisions</div>
-          <div class="h-9 w-9 grid place-items-center rounded-xl bg-slate-100 text-maroon-900">🏢</div>
+          <div class="h-9 w-9 grid place-items-center rounded-xl bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
+            🏢
+          </div>
         </div>
         <div class="mt-1 text-3xl font-extrabold text-slate-900">{{ number_format($totalDivs) }}</div>
         <div class="mt-1 text-xs text-slate-500">Total division</div>
@@ -68,7 +100,7 @@
 
     {{-- CHARTS --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-2 rounded-3xl bg-white/85 backdrop-blur ring-1 ring-maroon-900/10 p-6">
+      <div class="lg:col-span-2 rounded-3xl bg-white/95 backdrop-blur ring-1 ring-maroon-900/10 p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-semibold text-slate-800">Reports per Site</h3>
           <span class="text-xs text-slate-500">Total {{ number_format($totalReports) }}</span>
@@ -78,7 +110,7 @@
         </div>
       </div>
 
-      <div class="rounded-3xl bg-white/85 backdrop-blur ring-1 ring-maroon-900/10 p-6">
+      <div class="rounded-3xl bg-white/95 backdrop-blur ring-1 ring-maroon-900/10 p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-semibold text-slate-800">Users per Division</h3>
           <span class="text-xs text-slate-500">Total {{ number_format($totalUsers) }}</span>
@@ -90,7 +122,7 @@
     </div>
 
     {{-- LATEST REPORTS --}}
-    <div class="rounded-3xl bg-white/85 backdrop-blur ring-1 ring-maroon-900/10 p-6">
+    <div class="rounded-3xl bg-white/95 backdrop-blur ring-1 ring-maroon-900/10 p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-semibold text-slate-800">Latest Power BI Reports</h3>
       </div>
@@ -100,13 +132,19 @@
           <div class="group rounded-xl bg-white ring-1 ring-slate-200 hover:ring-maroon-400 hover:shadow-lg transition p-4 select-none">
             <div class="flex items-start justify-between">
               <div class="text-xs text-slate-400">#{{ \Illuminate\Support\Str::substr($r->id,0,6) }}</div>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200">Power BI</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
+                Power BI
+              </span>
             </div>
-            <div class="mt-1 font-semibold text-slate-800 line-clamp-2 group-hover:text-maroon-700 transition">{{ $r->name }}</div>
-            <div class="mt-2 text-xs text-slate-500">{{ optional($r->created_at)->format('d M Y') }}</div>
+            <div class="mt-1 font-semibold text-slate-800 line-clamp-2 group-hover:text-maroon-700 transition">
+              {{ $r->name }}
+            </div>
+            <div class="mt-2 text-xs text-slate-500">
+              {{ optional($r->created_at)->format('d M Y') }}
+            </div>
           </div>
         @empty
-          <div class="col-span-full rounded-xl bg-slate-50 border border-slate-200 text-maroon-900 p-4">
+          <div class="col-span-full rounded-xl bg-slate-50 border border-slate-200 text-maroon-900 p-4 text-sm">
             Belum ada report.
           </div>
         @endforelse
@@ -127,9 +165,10 @@
   const reportsPerSite = @json($reportsPerSiteArr);
   const usersPerDivision = @json($usersPerDivisionArr);
 
-  const MAROON = 'rgba(128,0,32,0.9)';
-  const MAROON_BORDER = 'rgba(86,0,22,1)';
-  const SLATE = 'rgba(100,116,139,0.3)';
+  // maroon brand (mendekati maroon-700/800)
+  const MAROON = 'rgba(122, 30, 41, 0.9)';       // #7a1e29
+  const MAROON_BORDER = 'rgba(90, 23, 31, 1)';   // #5a171f
+  const SLATE = 'rgba(148, 163, 184, 0.35)';
 
   // Bar chart
   new Chart(document.getElementById('chartReportsPerSite'), {
@@ -149,15 +188,29 @@
       maintainAspectRatio: false,
       scales: {
         x: { grid: { display: false } },
-        y: { beginAtZero: true, ticks:{ precision:0 }, grid:{ color: SLATE } }
+        y: {
+          beginAtZero: true,
+          ticks:{ precision:0 },
+          grid:{ color: SLATE }
+        }
       },
       plugins: { legend:{ display:false } }
     }
   });
 
   // Doughnut chart
-  const doughnutColors = [MAROON, 'rgba(160,40,70,0.9)','rgba(200,80,120,0.9)','rgba(240,120,160,0.9)'];
-  const doughnutBorders = [MAROON_BORDER,'rgba(120,20,40,1)','rgba(150,40,70,1)','rgba(180,60,100,1)'];
+  const doughnutColors = [
+    'rgba(122, 30, 41, 0.9)',
+    'rgba(153, 38, 53, 0.9)',
+    'rgba(185, 46, 65, 0.9)',
+    'rgba(217, 76, 97, 0.9)'
+  ];
+  const doughnutBorders = [
+    'rgba(90, 23, 31, 1)',
+    'rgba(120, 30, 43, 1)',
+    'rgba(150, 40, 60, 1)',
+    'rgba(176, 60, 80, 1)'
+  ];
 
   new Chart(document.getElementById('chartUsersPerDivision'), {
     type: 'doughnut',
@@ -172,7 +225,12 @@
     },
     options: {
       maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, boxHeight:12 } } },
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels:{ boxWidth:12, boxHeight:12, usePointStyle:false }
+        }
+      },
       cutout:'60%'
     }
   });
