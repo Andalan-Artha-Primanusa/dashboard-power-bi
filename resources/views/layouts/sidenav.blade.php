@@ -31,6 +31,11 @@
 
     @php
         $u = $u ?? auth()->user();
+
+        // role helper (pakai Spatie / HasRoles)
+        $isGM          = $u?->hasRole('gm') ?? false;
+        $isSuperAdmin  = $u?->hasRole('super_admin') ?? false;
+        $isCreator     = $u?->hasRole('creator') ?? false;
     @endphp
 
     {{-- USER CARD --}}
@@ -247,7 +252,7 @@
         </div>
 
         {{-- ADMIN MENU --}}
-        @if($u && ($isGM || $isSuperAdmin))
+        @if($u && ($isGM || $isSuperAdmin || $isCreator))
             <div class="mt-4 px-3 text-[10px] uppercase tracking-wide text-white/70"
                  x-show="sidebarExpanded"
                  x-transition.opacity.duration.150ms>
@@ -341,7 +346,14 @@
         @endif
 
         {{-- SECURITY --}}
-        @if(($u && $isSuperAdmin) || ($u && method_exists($u,'can') && $u->can('view-audit')))
+        @if(
+            $u && (
+                $isSuperAdmin
+                || $isGM
+                || $isCreator
+                || (method_exists($u,'can') && $u->can('view-audit'))
+            )
+        )
             <div class="mt-4 px-3 text-[10px] uppercase tracking-wide text-white/70"
                  x-show="sidebarExpanded"
                  x-transition.opacity.duration.150ms>

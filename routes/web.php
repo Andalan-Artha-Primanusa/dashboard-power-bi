@@ -97,8 +97,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [PowerBiController::class, 'sites'])->name('index');
         Route::get('/sites', fn() => redirect()->route('powerbi.index'))->name('sites');
 
-        Route::get('/site/{site}',    [PowerBiController::class, 'siteReports'])->name('site.reports');
-        Route::get('/report/{report}',[PowerBiController::class, 'show'])->name('show');
+        Route::get('/site/{site}',     [PowerBiController::class, 'siteReports'])->name('site.reports');
+        Route::get('/report/{report}', [PowerBiController::class, 'show'])->name('show');
 
         Route::get('/{report}', function ($report) {
             return redirect()->route('powerbi.show', ['report' => $report]);
@@ -112,7 +112,7 @@ Route::middleware('auth')->group(function () {
     */
     Route::prefix('admin/powerbi')
         ->name('admin.powerbi.')
-        ->middleware('role:gm|super_admin')
+        ->middleware('role:gm|super_admin|creator')
         ->group(function () {
             Route::get('/',              [PowerBiAdminController::class, 'index'])->name('index');
             Route::get('/create',        [PowerBiAdminController::class, 'create'])->name('create');
@@ -130,7 +130,7 @@ Route::middleware('auth')->group(function () {
     */
     Route::prefix('admin/companies')
         ->name('admin.companies.')
-        ->middleware('role:gm|super_admin')
+        ->middleware('role:gm|super_admin|creator')
         ->group(function () {
             Route::get('/',               [CompanyAdminController::class, 'index'])->name('index');
             Route::get('/create',         [CompanyAdminController::class, 'create'])->name('create');
@@ -152,7 +152,7 @@ Route::middleware('auth')->group(function () {
     */
     Route::prefix('admin/sites')
         ->name('admin.sites.')
-        ->middleware('role:gm|super_admin')
+        ->middleware('role:gm|super_admin|creator')
         ->group(function () {
             Route::get('/',              [SiteAdminController::class, 'index'])->name('index');
             Route::get('/create',        [SiteAdminController::class, 'create'])->name('create');
@@ -174,7 +174,7 @@ Route::middleware('auth')->group(function () {
     */
     Route::prefix('admin/divisions')
         ->name('admin.divisions.')
-        ->middleware('role:gm|super_admin')
+        ->middleware('role:gm|super_admin|creator')
         ->group(function () {
             Route::get('/',                  [DivisionAdminController::class, 'index'])->name('index');
             Route::get('/create',            [DivisionAdminController::class, 'create'])->name('create');
@@ -192,53 +192,53 @@ Route::middleware('auth')->group(function () {
     */
     Route::prefix('admin/users')
         ->name('admin.users.')
-        ->middleware('role:gm|super_admin')
+        ->middleware('role:gm|super_admin|creator')
         ->group(function () {
-            Route::get('/',                 [UserAdminController::class, 'index'])->name('index');
-            Route::get('/create',           [UserAdminController::class, 'create'])->name('create');
-            Route::post('/',                [UserAdminController::class, 'store'])->name('store');
+            Route::get('/',                  [UserAdminController::class, 'index'])->name('index');
+            Route::get('/create',            [UserAdminController::class, 'create'])->name('create');
+            Route::post('/',                 [UserAdminController::class, 'store'])->name('store');
 
-            Route::get('/{user}/edit',      [UserAdminController::class, 'edit'])->name('edit');
+            Route::get('/{user}/edit',       [UserAdminController::class, 'edit'])->name('edit');
 
             // ✅ update utama user
-            Route::put('/{user}',           [UserAdminController::class, 'update'])->name('update');
-            Route::patch('/{user}',         [UserAdminController::class, 'update']); // alias PATCH
+            Route::put('/{user}',            [UserAdminController::class, 'update'])->name('update');
+            Route::patch('/{user}',          [UserAdminController::class, 'update']); // alias PATCH
 
             // quick update fields
-            Route::patch('/{user}/division',[UserAdminController::class, 'updateDivision'])->name('updateDivision');
-            Route::patch('/{user}/site',    [UserAdminController::class, 'updateSite'])->name('updateSite');
+            Route::patch('/{user}/division', [UserAdminController::class, 'updateDivision'])->name('updateDivision');
+            Route::patch('/{user}/site',     [UserAdminController::class, 'updateSite'])->name('updateSite');
 
             // reset password
             Route::post('/{user}/reset-password', [UserAdminController::class, 'resetPassword'])->name('resetPassword');
 
             // ✅ PHOTO routes (controller pakai updatePhoto/deletePhoto)
-            Route::patch('/{user}/photo',   [UserAdminController::class, 'updatePhoto'])->name('updatePhoto');
-            Route::post('/{user}/photo',    [UserAdminController::class, 'updatePhoto']); // alias POST biar form lama gak 405
-            Route::delete('/{user}/photo',  [UserAdminController::class, 'deletePhoto'])->name('deletePhoto');
+            Route::patch('/{user}/photo',    [UserAdminController::class, 'updatePhoto'])->name('updatePhoto');
+            Route::post('/{user}/photo',     [UserAdminController::class, 'updatePhoto']); // alias POST biar form lama gak 405
+            Route::delete('/{user}/photo',   [UserAdminController::class, 'deletePhoto'])->name('deletePhoto');
 
             // delete user
-            Route::delete('/{user}',        [UserAdminController::class, 'destroy'])->name('destroy');
+            Route::delete('/{user}',         [UserAdminController::class, 'destroy'])->name('destroy');
         });
 
     /*
     |=========================
-    | AUDIT LOG (SUPER ADMIN ONLY)
+    | AUDIT LOG (SUPER ADMIN + GM + CREATOR)
     |=========================
     */
     Route::prefix('admin/audit')
         ->name('admin.audit.')
-        ->middleware(['auth', 'role:super_admin'])
+        ->middleware(['auth', 'role:gm|super_admin|creator'])
         ->group(function () {
-            Route::get('/',                   [AuditLogController::class, 'index'])->name('index');
-            Route::get('/users/{user}',       [AuditLogController::class, 'showUser'])->name('user');
-            Route::get('/export.csv',         [AuditLogController::class, 'exportCsv'])->name('export');
+            Route::get('/',                        [AuditLogController::class, 'index'])->name('index');
+            Route::get('/users/{user}',            [AuditLogController::class, 'showUser'])->name('user');
+            Route::get('/export.csv',              [AuditLogController::class, 'exportCsv'])->name('export');
             Route::get('/users/{user}/export.csv', [AuditLogController::class, 'exportUserCsv'])->name('user.export');
         });
 });
 
 /*
-|-------------------------------------------------------------------------- 
+|--------------------------------------------------------------------------
 | Auth scaffolding (Breeze/Fortify/etc.)
-|-------------------------------------------------------------------------- 
+|--------------------------------------------------------------------------
 */
 require __DIR__ . '/auth.php';

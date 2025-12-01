@@ -222,6 +222,7 @@
             <option value="gm"          @selected(old('role')==='gm')>General Manager</option>
             <option value="manager"     @selected(old('role')==='manager')>Manager</option>
             <option value="staff"       @selected(old('role')==='staff')>Staff</option>
+            <option value="creator"    @selected(old('role')==='creator')>Creator</option>
           </select>
           @error('role') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
         </div>

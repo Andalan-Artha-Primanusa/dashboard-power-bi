@@ -30,12 +30,12 @@ class AuthServiceProvider extends ServiceProvider
 
         // === Kelola Power BI (GM & Super Admin) ===
         Gate::define('manage-powerbi', function (User $user) {
-            return in_array($user->role ?? 'user', ['gm', 'super_admin'], true);
+            return in_array($user->role ?? 'user', ['gm', 'super_admin','creator'], true);
         });
 
         // === Kelola User (GM & Super Admin) ===
         Gate::define('manage-users', function (User $user) {
-            return in_array($user->role ?? 'user', ['gm', 'super_admin'], true);
+            return in_array($user->role ?? 'user', ['gm', 'super_admin','creator'], true);
         });
 
         // === Lihat Audit (Super Admin only) ===
@@ -79,7 +79,7 @@ class AuthServiceProvider extends ServiceProvider
 
         // === Kelola company (GM & Super Admin) ===
         Gate::define('manage-companies', function (User $user) {
-            return in_array($user->role ?? 'user', ['gm', 'super_admin'], true);
+            return in_array($user->role ?? 'user', ['gm', 'super_admin','creator'], true);
         });
     }
 }

@@ -41,6 +41,7 @@ class PowerBiController extends Controller
             'superadmin'      => 'super_admin',
             'sa'              => 'super_admin',
             'root'            => 'super_admin',
+            'creator'        => 'creator',
         ];
         $roleKey = $map[$norm] ?? $norm;
 
@@ -62,7 +63,7 @@ class PowerBiController extends Controller
         ?? (is_string($user->role ?? null) ? $user->role : '')
         ?? '';
     $norm = \Illuminate\Support\Str::of($raw)->lower()->replace(['_', '-'], ' ')->squish()->toString();
-    $map  = ['general manager'=>'gm','generalmanager'=>'gm','mgr'=>'manager','gm'=>'gm','manager'=>'manager','super admin'=>'super_admin','superadmin'=>'super_admin','sa'=>'super_admin','root'=>'super_admin'];
+    $map  = ['general manager'=>'gm','generalmanager'=>'gm','mgr'=>'manager','gm'=>'gm','manager'=>'manager','super admin'=>'super_admin','superadmin'=>'super_admin','sa'=>'super_admin','root'=>'super_admin','creator'=>'creator',];
     $roleKey = $map[$norm] ?? $norm;
     $isGM = $roleKey === 'gm';
 

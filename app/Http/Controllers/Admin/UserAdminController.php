@@ -20,7 +20,7 @@ class UserAdminController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:gm|super_admin']);
+        $this->middleware(['auth', 'role:gm|super_admin|creator']);
     }
 
     /**
@@ -144,7 +144,7 @@ class UserAdminController extends Controller
 
             'default_company_id' => ['nullable','uuid','exists:companies,id'],
             'division_id'        => ['nullable','uuid','exists:divisions,id'],
-            'role'               => ['required','in:super_admin,gm,manager,staff'],
+            'role'               => ['required','in:super_admin,gm,manager,staff,creator'],
 
             'default_site_id'    => ['nullable','uuid','exists:sites,id'],
 
@@ -247,7 +247,7 @@ class UserAdminController extends Controller
 
             'default_company_id' => ['nullable','uuid','exists:companies,id'],
             'division_id'        => ['nullable','uuid','exists:divisions,id'],
-            'role'               => ['required','in:super_admin,gm,manager,staff'],
+            'role'               => ['required','in:super_admin,gm,manager,staff,creator'],
 
             'default_site_id'    => ['nullable','uuid','exists:sites,id'],
 

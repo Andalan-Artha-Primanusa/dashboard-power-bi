@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 
 class CompanyContextController extends Controller
 {
-    public function __construct()
+     public function __construct()
     {
-        $this->middleware(['auth']);
+        $this->middleware(['auth', 'role:gm|super_admin|creator']);
     }
 
     /**

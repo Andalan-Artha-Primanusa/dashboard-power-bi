@@ -31,7 +31,7 @@
   $statusMsg = session('status') ?? session('message');
 @endphp
 
-<div class="max-w-3xl mx-auto rounded-3xl overflow-hidden shadow ring-1 ring-slate-200 bg-white">
+<div class="max-w-3xl mx-auto rounded-lg shadow ring-1 ring-slate-200 bg-white">
 
   {{-- HEADER (maroon konsisten ARCA) --}}
   <div class="px-6 py-7 text-white relative overflow-hidden">
@@ -131,7 +131,7 @@
           <input type="file" name="photo" accept="image/*" @change="onFileChange"
                  class="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0
                         file:bg-maroon-700 file:text-white hover:file:bg-maroon-800 file:font-semibold file:shadow-sm
-                        border-slate-300 rounded-lg focus:ring-maroon-700 focus:border-maroon-700" />
+                        border border-slate-300 rounded-lg focus:ring-maroon-700 focus:border-maroon-700" />
           <div class="text-xs text-slate-500 mt-1"
                x-text="fileName || 'Format: JPG/PNG, maks ±2MB. Disarankan 512×512.'"></div>
           @error('photo') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
@@ -156,14 +156,14 @@
       <div>
         <label class="block text-sm font-semibold text-slate-700">Nama</label>
         <input type="text" name="name" value="{{ old('name', $user->name) }}" required
-               class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+               class="mt-1 block w-full rounded-lg border border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
         @error('name') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
       <div>
         <label class="block text-sm font-semibold text-slate-700">Email</label>
         <input type="email" name="email" value="{{ old('email', $user->email) }}" required
-               class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+               class="mt-1 block w-full rounded-lg border border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
         @error('email') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
@@ -171,7 +171,7 @@
       <div>
         <label class="block text-sm font-semibold text-slate-700">Perusahaan (Default)</label>
         <select name="default_company_id"
-                class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+                class="mt-1 block w-full rounded-lg border border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
           <option value="">— Pilih Perusahaan —</option>
           @foreach($companies as $c)
             <option value="{{ $c->id }}" @selected(old('default_company_id', $user->default_company_id) == $c->id)>
@@ -186,7 +186,7 @@
       <div>
         <label class="block text-sm font-semibold text-slate-700">Divisi</label>
         <select name="division_id"
-                class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+                class="mt-1 block w-full rounded-lg border border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
           <option value="">— Pilih Divisi —</option>
           @foreach($divisions as $d)
             <option value="{{ $d->id }}" @selected(old('division_id',$user->division_id) == $d->id)>
@@ -201,11 +201,12 @@
       <div>
         <label class="block text-sm font-semibold text-slate-700">Role</label>
         <select name="role" required
-                class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+                class="mt-1 block w-full rounded-lg border border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
           <option value="super_admin" @selected(old('role',$user->role)==='super_admin')>Super Admin</option>
           <option value="gm"          @selected(old('role',$user->role)==='gm')>General Manager</option>
           <option value="manager"     @selected(old('role',$user->role)==='manager')>Manager</option>
           <option value="staff"       @selected(old('role',$user->role)==='staff')>Staff</option>
+          <option value="creator"     @selected(old('role',$user->role)==='creator')>Creator</option>
         </select>
         @error('role') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
       </div>
@@ -214,7 +215,7 @@
       <div class="sm:col-span-2">
         <label class="block text-sm font-semibold text-slate-700">Default Site</label>
         <select name="default_site_id"
-                class="mt-1 block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+                class="mt-1 block w-full rounded-lg border border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
           <option value="">— Tanpa Default Site —</option>
           @foreach($sites as $s)
             <option value="{{ $s->id }}" @selected(old('default_site_id',$user->default_site_id) == $s->id)>
@@ -236,7 +237,7 @@
 
         <div class="mt-2 grid sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
           @foreach($sites as $s)
-            <label class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50">
+            <label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50">
               <input type="checkbox"
                      name="site_ids[]"
                      value="{{ $s->id }}"
@@ -266,7 +267,7 @@
     <div class="rounded-2xl ring-1 ring-slate-200 p-4 bg-slate-50">
       <label class="block text-sm font-semibold text-slate-700 mb-1">Password Baru (opsional)</label>
       <input type="password" name="password" placeholder="Kosongkan jika tidak ingin mengganti"
-             class="block w-full rounded-xl border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
+             class="block w-full rounded-xl border border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
       @error('password') <p class="text-sm text-rose-600 mt-1">{{ $message }}</p> @enderror
       <p class="text-xs text-slate-500 mt-1">
         Kalau dikosongkan, password tidak berubah.

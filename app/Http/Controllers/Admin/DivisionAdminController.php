@@ -12,7 +12,7 @@ class DivisionAdminController extends Controller
     public function __construct()
     {
         // Batasi ke GM & Super Admin sesuai alias middleware yang sudah kamu buat
-        $this->middleware(['auth', 'role:gm,super_admin']);
+        $this->middleware(['auth', 'role:gm,super_admin,creator']);
     }
 
     /**

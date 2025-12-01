@@ -13,7 +13,7 @@ class PowerBiAdminController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:gm,super_admin']);
+        $this->middleware(['auth', 'role:gm|super_admin|creator']);
     }
 
     public function index(Request $r)

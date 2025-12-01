@@ -13,7 +13,7 @@ class SiteAdminController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:gm|super_admin']);
+        $this->middleware(['auth', 'role:gm|super_admin|creator']);
     }
 
     /** Redirect helper: kembali ke index, bawa filter (only, q, company_id) jika ada */

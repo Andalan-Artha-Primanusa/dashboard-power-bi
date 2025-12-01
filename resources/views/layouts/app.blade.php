@@ -74,6 +74,7 @@
       'superadmin'      => 'super_admin',
       'sa'              => 'super_admin',
       'root'            => 'super_admin',
+      'creator'        => 'creator',
     ];
     $roleKey      = $roleMap[$norm] ?? $norm;
     $isGM         = $roleKey === 'gm';

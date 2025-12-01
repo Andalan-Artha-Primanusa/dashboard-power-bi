@@ -39,6 +39,7 @@ class EnsureUserHasRole
             'superadmin'      => 'super_admin',
             'sa'              => 'super_admin',
             'root'            => 'super_admin',
+            'creator'        => 'creator',
         ];
         $userRole = $map[$norm] ?? $norm;
 
@@ -59,6 +60,7 @@ class EnsureUserHasRole
                 'superadmin'      => 'super_admin',
                 'sa'              => 'super_admin',
                 'root'            => 'super_admin',
+                'creator'        => 'creator',
             ][$r] ?? $r))
             ->unique()
             ->values();
