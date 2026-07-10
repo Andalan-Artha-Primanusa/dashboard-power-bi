@@ -5,36 +5,8 @@
     <title>@yield('title', 'ARCA — Andalan Reporting & Control Analytics')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    {{-- Vite (kalau sudah pakai) --}}
-    @vite([])
-
-    {{-- Tailwind CDN --}}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      // Brand dibatasi ke dua warna visual: putih dan tan.
-      const brandTan = '#BD9B75';
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              brand: brandTan,
-              maroon: {
-                50:  brandTan,
-                100: brandTan,
-                200: brandTan,
-                300: brandTan,
-                400: brandTan,
-                500: brandTan,
-                600: brandTan,
-                700: brandTan,
-                800: brandTan,
-                900: brandTan,
-              },
-            },
-          },
-        },
-      }
-    </script>
+    {{-- Tailwind production build via Vite --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Alpine.js --}}
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
