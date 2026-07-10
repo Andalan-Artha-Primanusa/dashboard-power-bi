@@ -3,15 +3,13 @@
 @section('title','Dashboard')
 
 @section('content')
-<div class="min-h-screen bg-[#edf3fb] py-6">
+<div class="min-h-screen bg-white py-6">
   {{-- wrapper full-width mengikuti main (tanpa max-w lagi) --}}
   <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 space-y-8">
 
     {{-- HERO STRIP (Maroon • Putih) --}}
     <div class="relative overflow-hidden rounded-3xl ring-1 ring-[#ffffff]/40">
-      {{-- gradient maroon brand --}}
-      <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600"></div>
-      <div class="absolute inset-0 opacity-25 bg-[radial-gradient(90%_70%_at_0%_0%,_rgba(255,255,255,0.55),_transparent_60%)]"></div>
+      <div class="absolute inset-0 bg-maroon-800"></div>
 
       <div class="relative px-6 py-8 sm:px-10 sm:py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6 text-white">
         <div class="space-y-1">
@@ -30,23 +28,13 @@
         </div>
 
         <div class="flex flex-wrap gap-3 justify-start md:justify-end">
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-maroon-900 font-semibold shadow-sm text-sm
-                   cursor-not-allowed pointer-events-none select-none"
+          <a
+            href="{{ route('powerbi.index') }}"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-maroon-900 font-semibold shadow-sm text-sm hover:bg-white"
           >
-            <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-maroon-100 text-maroon-800 text-[11px]">📊</span>
-            <span>Lihat Semua Dashboards</span>
-          </button>
-
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/15 text-white font-semibold ring-1 ring-white/25 text-sm
-                   cursor-not-allowed pointer-events-none select-none"
-          >
-            <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-white/10 text-white text-[11px]">⟳</span>
-            <span>Refresh</span>
-          </button>
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-maroon-100 text-maroon-800 text-[11px]">BI</span>
+            <span>Buka Flow Dashboard</span>
+          </a>
         </div>
       </div>
     </div>
@@ -57,7 +45,7 @@
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">Power BI Reports</div>
           <div class="h-9 w-9 grid place-items-center rounded-xl bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
-            📊
+            BI
           </div>
         </div>
         <div class="mt-1 text-3xl font-extrabold text-slate-900">{{ number_format($totalReports) }}</div>
@@ -68,7 +56,7 @@
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">Sites</div>
           <div class="h-9 w-9 grid place-items-center rounded-xl bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
-            🗺️
+            ST
           </div>
         </div>
         <div class="mt-1 text-3xl font-extrabold text-slate-900">{{ number_format($totalSites) }}</div>
@@ -79,7 +67,7 @@
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">Users</div>
           <div class="h-9 w-9 grid place-items-center rounded-xl bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
-            👥
+            US
           </div>
         </div>
         <div class="mt-1 text-3xl font-extrabold text-slate-900">{{ number_format($totalUsers) }}</div>
@@ -90,7 +78,7 @@
         <div class="flex items-center justify-between">
           <div class="text-sm text-slate-600">Divisions</div>
           <div class="h-9 w-9 grid place-items-center rounded-xl bg-maroon-50 text-maroon-800 ring-1 ring-maroon-100">
-            🏢
+            DV
           </div>
         </div>
         <div class="mt-1 text-3xl font-extrabold text-slate-900">{{ number_format($totalDivs) }}</div>
@@ -166,9 +154,9 @@
   const usersPerDivision = @json($usersPerDivisionArr);
 
   // maroon brand (mendekati maroon-700/800)
-  const MAROON = 'rgba(122, 30, 41, 0.9)';       // #7a1e29
-  const MAROON_BORDER = 'rgba(90, 23, 31, 1)';   // #5a171f
-  const SLATE = 'rgba(148, 163, 184, 0.35)';
+  const MAROON = '#BD9B75';
+  const MAROON_BORDER = '#BD9B75';
+  const SLATE = '#BD9B75';
 
   // Bar chart
   new Chart(document.getElementById('chartReportsPerSite'), {
@@ -199,18 +187,8 @@
   });
 
   // Doughnut chart
-  const doughnutColors = [
-    'rgba(122, 30, 41, 0.9)',
-    'rgba(153, 38, 53, 0.9)',
-    'rgba(185, 46, 65, 0.9)',
-    'rgba(217, 76, 97, 0.9)'
-  ];
-  const doughnutBorders = [
-    'rgba(90, 23, 31, 1)',
-    'rgba(120, 30, 43, 1)',
-    'rgba(150, 40, 60, 1)',
-    'rgba(176, 60, 80, 1)'
-  ];
+  const doughnutColors = ['#BD9B75'];
+  const doughnutBorders = ['#fff'];
 
   new Chart(document.getElementById('chartUsersPerDivision'), {
     type: 'doughnut',

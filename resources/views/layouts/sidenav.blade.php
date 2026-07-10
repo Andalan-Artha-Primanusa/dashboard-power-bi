@@ -40,7 +40,7 @@
 
     {{-- USER CARD --}}
     <div class="px-3 pt-3">
-        <div class="rounded-2xl bg-gradient-to-br from-maroon-900 to-maroon-800 ring-1 ring-maroon-600 shadow-lg p-3">
+        <div class="rounded-2xl bg-maroon-900 ring-1 ring-maroon-600 shadow-lg p-3">
             <div class="flex items-center gap-3"
                  :class="sidebarExpanded ? 'justify-start' : 'justify-center'">
                 @if($photo)
@@ -98,7 +98,7 @@
                             @click="openCompanySwitch = !openCompanySwitch"
                             class="shrink-0 inline-flex items-center justify-center px-2.5 py-1.5 rounded-xl bg-white text-maroon-900 text-[10px] font-extrabold hover:bg-white/90 shadow">
                         <span x-show="sidebarExpanded">Ganti</span>
-                        <span x-show="!sidebarExpanded">🏭</span>
+                        <span x-show="!sidebarExpanded">CO</span>
                     </button>
                 @endif
             </div>
@@ -207,7 +207,7 @@
                 {{ request()->routeIs('dashboard')
                     ? 'bg-white text-maroon-900 border-white shadow-lg'
                     : 'bg-maroon-700/40 text-white/90 border-maroon-500/40 group-hover:bg-white group-hover:text-maroon-900 group-hover:border-white/80' }}">
-                📊
+                DB
             </div>
             <span class="truncate text-[13px] font-medium"
                   x-show="sidebarExpanded"
@@ -224,7 +224,7 @@
                 {{ request()->routeIs('powerbi.*')
                     ? 'bg-white text-maroon-900 border-white shadow-lg'
                     : 'bg-maroon-700/40 text-white/90 border-maroon-500/40 group-hover:bg-white group-hover:text-maroon-900 group-hover:border-white/80' }}">
-                📈
+                BI
             </div>
             <div class="flex-1 min-w-0"
                  x-show="sidebarExpanded"
@@ -247,7 +247,7 @@
             <a href="{{ $activeSite ? route('powerbi.site.reports', $activeSite) : route('powerbi.sites') }}"
                class="mt-1 w-full inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-medium
                   {{ $activeSite ? 'bg-maroon-700 hover:bg-maroon-600 text-white' : 'bg-maroon-700/60 text-white/70 cursor-pointer' }}">
-                ▶ Buka Dashboards ({{ $activeSite?->code ?? 'pilih site' }})
+                Buka Dashboards ({{ $activeSite?->code ?? 'pilih site' }})
             </a>
         </div>
 
@@ -267,7 +267,7 @@
                     {{ request()->routeIs('admin.companies.*')
                         ? 'bg-white text-maroon-900 border-white shadow-lg'
                         : 'bg-maroon-700/40 text-white/90 border-maroon-500/40 group-hover:bg-white group-hover:text-maroon-900 group-hover:border-white/80' }}">
-                    🏭
+                    CO
                 </div>
                 <span class="truncate text-[13px] font-medium"
                       x-show="sidebarExpanded"
@@ -301,7 +301,7 @@
                     {{ request()->routeIs('admin.powerbi.*')
                         ? 'bg-white text-maroon-900 border-white shadow-lg'
                         : 'bg-maroon-700/40 text-white/90 border-maroon-500/40 group-hover:bg-white group-hover:text-maroon-900 group-hover:border-white/80' }}">
-                    🧰
+                    BI
                 </div>
                 <span class="truncate text-[13px] font-medium"
                       x-show="sidebarExpanded"
@@ -318,7 +318,7 @@
                     {{ request()->routeIs('admin.divisions.*')
                         ? 'bg-white text-maroon-900 border-white shadow-lg'
                         : 'bg-maroon-700/40 text-white/90 border-maroon-500/40 group-hover:bg-white group-hover:text-maroon-900 group-hover:border-white/80' }}">
-                    🏢
+                    DV
                 </div>
                 <span class="truncate text-[13px] font-medium"
                       x-show="sidebarExpanded"
@@ -335,7 +335,7 @@
                     {{ request()->routeIs('admin.users.*')
                         ? 'bg-white text-maroon-900 border-white shadow-lg'
                         : 'bg-maroon-700/40 text-white/90 border-maroon-500/40 group-hover:bg-white group-hover:text-maroon-900 group-hover:border-white/80' }}">
-                    👥
+                    US
                 </div>
                 <span class="truncate text-[13px] font-medium"
                       x-show="sidebarExpanded"
@@ -368,7 +368,7 @@
                     {{ request()->routeIs('admin.audit.index')
                         ? 'bg-white text-maroon-900 border-white shadow-lg'
                         : 'bg-maroon-700/40 text-white/90 border-maroon-500/40 group-hover:bg-white group-hover:text-maroon-900 group-hover:border-white/80' }}">
-                    📜
+                    AU
                 </div>
                 <span class="truncate text-[13px] font-medium"
                       x-show="sidebarExpanded"
@@ -385,7 +385,7 @@
                     {{ request()->routeIs('admin.audit.user')
                         ? 'bg-white text-maroon-900 border-white shadow-lg'
                         : 'bg-maroon-700/40 text-white/90 border-maroon-500/40 group-hover:bg-white group-hover:text-maroon-900 group-hover:border-white/80' }}">
-                    👤
+                    UA
                 </div>
                 <span class="truncate text-[13px] font-medium"
                       x-show="sidebarExpanded"
@@ -402,7 +402,7 @@
             @csrf
             <button type="submit"
                     class="w-full px-3 py-2 rounded-2xl bg-white text-maroon-900 text-xs font-extrabold hover:bg-white/90 shadow flex items-center justify-center gap-2">
-                🚪
+                OUT
                 <span x-show="sidebarExpanded" x-transition.opacity.duration.150ms>
                     Keluar dari ARCA
                 </span>

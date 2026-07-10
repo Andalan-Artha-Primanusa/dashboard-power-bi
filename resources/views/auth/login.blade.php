@@ -9,13 +9,14 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
     :root{
-      --maroon-900:#3f0f14; --maroon-800:#5a171f; --maroon-700:#7a1e29;
-      --maroon-600:#992635; --maroon-500:#b92e41; --ink:#0f172a;
+      --maroon-900:#BD9B75; --maroon-800:#BD9B75; --maroon-700:#BD9B75;
+      --maroon-600:#BD9B75; --maroon-500:#BD9B75; --ink:#BD9B75;
     }
     .noise{
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 .02 .05 .08 .1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
   </style>
+  @include('partials.two-tone-theme')
 </head>
 <body class="min-h-screen bg-white text-slate-800">
   <div class="relative flex min-h-screen flex-col lg:flex-row">

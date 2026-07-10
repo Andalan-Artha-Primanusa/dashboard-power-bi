@@ -1,281 +1,147 @@
-{{-- resources/views/powerbi/dashboards.blade.php --}}
+{{-- resources/views/powerbi/sites.blade.php --}}
 @extends('layouts.app')
 @section('title','Dashboards')
 
 @section('content')
 @php
-  use Illuminate\Support\Str;
   use Illuminate\Support\Facades\Auth;
+  use Illuminate\Support\Str;
 
   $u = Auth::user();
+  $isContextChooser = $isGM ?? false;
 
-  // fallback isGM kalau controller gak ngirim
-  $isGM = $isGM ?? ($u && method_exists($u,'isGM') ? $u->isGM() : (($u->role ?? '') === 'gm'));
-  $isSA = $u && method_exists($u,'isSuperAdmin') ? $u->isSuperAdmin() : (($u->role ?? '') === 'super_admin');
-  $isGM = $isGM || $isSA;
-
-  // ====== optional Company model ======
-  $hasCompanyModel = false;
-  try { $hasCompanyModel = class_exists(\App\Models\Company::class); }
-  catch (\Throwable $e) { $hasCompanyModel = false; }
+  $hasCompanyModel = class_exists(\App\Models\Company::class);
   $CompanyClass = $hasCompanyModel ? \App\Models\Company::class : null;
 
-  // ====== active company ======
-  // GM/SA: wajib pilih manual via session (company.switch)
-  // Non-GM: lock ke default_company_id (kalau session kosong, auto set)
-  if(!$isGM && $u && empty(session('company_id')) && !empty($u->default_company_id)) {
-    try { session(['company_id' => $u->default_company_id]); } catch (\Throwable $e) {}
-  }
-
   $activeCompanyId = session('company_id') ?? ($u?->default_company_id ?? null);
-
   $activeCompany = null;
+
   if ($hasCompanyModel && $activeCompanyId) {
     try { $activeCompany = $CompanyClass::find($activeCompanyId); } catch (\Throwable $e) {}
   }
 
-  $companyLabel = $activeCompany
-    ? (($activeCompany->code ?? 'COMP').' — '.($activeCompany->name ?? ''))
-    : 'Belum memilih perusahaan';
-
-  // ====== companies list ======
   $companies = collect();
-  if ($hasCompanyModel) {
+  if ($hasCompanyModel && $isContextChooser) {
     try {
-      if (!$isGM && $u && method_exists($u,'companies')) {
-        $companies = $u->companies()->where('is_active',1)->orderBy('name')->get();
-      } else {
-        $companies = $CompanyClass::query()->where('is_active',1)->orderBy('name')->get();
-      }
+      $companies = $CompanyClass::query()
+        ->where('is_active', 1)
+        ->orderBy('name')
+        ->get(['id','code','name']);
     } catch (\Throwable $e) {}
   }
 
-  // ====== sites list ======
   $sitesCol = collect($sites ?? []);
-
-  // filter by company_id kalau kolom ada
-  if ($activeCompanyId && $sitesCol->isNotEmpty() && isset($sitesCol->first()->company_id)) {
-    $sitesCol = $sitesCol->where('company_id', $activeCompanyId)->values();
-  }
-
-  // activeSite fallback (kalau controller gak ngirim)
-  $activeSite = $activeSite ?? ($u && method_exists($u,'activeSite') ? $u->activeSite() : null);
 @endphp
 
-{{-- HEADER STRIP --}}
-<div class="mb-6 px-6 py-7 text-white relative overflow-hidden rounded-3xl shadow ring-1 ring-slate-200">
-  <div class="absolute inset-0 bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600"></div>
-  <div class="absolute inset-0 opacity-25 bg-[radial-gradient(70%_70%_at_10%_10%,_rgba(255,255,255,0.5)_0%,_transparent_60%)]"></div>
-  <div class="absolute -top-16 -right-16 size-64 rounded-full bg-white/10 blur-3xl"></div>
+<div class="space-y-6">
+  <section class="rounded-2xl overflow-hidden ring-1 ring-slate-200 shadow bg-white">
+    <div class="relative px-6 py-7 text-white">
+      <div class="absolute inset-0 bg-maroon-800"></div>
 
-  <div class="relative flex items-start justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">
-        @if($isGM) 🏭 Pilih Perusahaan @else ARCA @endif
-      </h1>
-      <p class="text-white/85 text-sm mt-1">
-        @if($isGM)
-          Urutan akses: <b>Pilih PT dulu</b>, baru pilih Site untuk lihat dashboard.
-        @else
-          Ringkasan akses Power BI sesuai PT & Site Anda.
-        @endif
-      </p>
+      <div class="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+        <div>
+          <div class="text-xs uppercase tracking-wide text-white/75">Flow Dashboard</div>
+          <h1 class="mt-1 text-2xl font-bold tracking-tight">Pilih context, lalu buka report</h1>
+          <p class="mt-2 max-w-2xl text-sm text-white/85">
+            Alurnya dibuat satu pintu: pilih perusahaan jika role kamu punya akses, pilih site, lalu pilih dashboard Power BI.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+          <div class="rounded-xl bg-white/15 ring-1 ring-white/25 px-3 py-2">1. Company</div>
+          <div class="rounded-xl bg-white/15 ring-1 ring-white/25 px-3 py-2">2. Site</div>
+          <div class="rounded-xl bg-white/15 ring-1 ring-white/25 px-3 py-2">3. Report</div>
+        </div>
+      </div>
     </div>
 
-    @if(!$isGM && $activeSite)
-      <a href="{{ route('powerbi.site.reports', $activeSite) }}"
-         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow bg-white text-maroon-900 ring-1 ring-white/20">
-        Buka Dashboard
-      </a>
-    @endif
-  </div>
-</div>
-
-{{-- =========================
-     COMPANY SECTION
-========================= --}}
-@if($companies->isNotEmpty())
-  <div class="mb-6">
-    @if($isGM)
-      <div class="flex items-center justify-between mb-3">
-        <div class="text-sm font-bold text-slate-800">🏭 Pilih Perusahaan</div>
-        <div class="text-xs text-slate-500">
-          Company aktif:
-          <b>{{ $activeCompany->code ?? '-' }}</b>
+    <div class="grid md:grid-cols-2 gap-4 p-5 bg-white">
+      <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div class="text-xs uppercase tracking-wide text-slate-500">Perusahaan aktif</div>
+        <div class="mt-1 font-semibold text-slate-900">
+          {{ $activeCompany ? (($activeCompany->code ?? 'COMP').' - '.$activeCompany->name) : 'Belum dipilih' }}
         </div>
+      </div>
+
+      <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div class="text-xs uppercase tracking-wide text-slate-500">Site aktif</div>
+        <div class="mt-1 font-semibold text-slate-900">
+          {{ $activeSite ? (($activeSite->code ?? 'SITE').' - '.$activeSite->name) : 'Belum dipilih' }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  @if($isContextChooser && $companies->isNotEmpty())
+    <section class="space-y-3">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-sm font-bold text-slate-800">1. Pilih perusahaan</h2>
+        <span class="text-xs text-slate-500">{{ $companies->count() }} perusahaan aktif</span>
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @foreach($companies as $c)
-          <form action="{{ route('company.switch') }}" method="POST" class="block">
+          <form action="{{ route('company.switch') }}" method="POST">
             @csrf
             <input type="hidden" name="company_id" value="{{ $c->id }}">
             <button type="submit"
-              class="w-full text-left group rounded-2xl bg-white shadow-md ring-1 ring-slate-200 hover:shadow-lg hover:-translate-y-0.5 transition p-5
-                     {{ $activeCompanyId===$c->id ? 'ring-2 ring-maroon-600/80 bg-maroon-50' : '' }}">
-              <div class="flex items-center justify-between mb-2">
-                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-maroon-700 to-maroon-600 text-white/90 grid place-items-center shadow-inner">
-                  🏭
+              class="w-full min-h-28 text-left rounded-xl bg-white ring-1 ring-slate-200 hover:ring-maroon-400 hover:shadow-md transition p-4 {{ $activeCompanyId === $c->id ? 'ring-2 ring-maroon-700 bg-maroon-50' : '' }}">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-lg font-bold text-slate-900">{{ $c->code ?? 'COMP' }}</div>
+                  <div class="mt-1 text-sm text-slate-600 line-clamp-2">{{ $c->name }}</div>
                 </div>
-                <span class="text-[10px] font-mono text-slate-400">#{{ Str::substr($c->id,0,6) }}</span>
+                <span class="text-[10px] text-slate-400">#{{ Str::substr($c->id, 0, 6) }}</span>
               </div>
-
-              <div class="text-lg font-semibold text-slate-900 group-hover:text-maroon-700 transition">
-                {{ $c->code ?? 'COMP' }}
-              </div>
-              <div class="text-sm text-slate-600 line-clamp-2">{{ $c->name }}</div>
-
-              <div class="mt-3 text-xs text-slate-500">
-                @if($activeCompanyId===$c->id)
-                  ✅ Sedang aktif
-                @else
-                  Klik untuk aktifkan PT ini
-                @endif
+              <div class="mt-3 text-xs {{ $activeCompanyId === $c->id ? 'text-maroon-800 font-semibold' : 'text-slate-500' }}">
+                {{ $activeCompanyId === $c->id ? 'Sedang aktif' : 'Aktifkan perusahaan ini' }}
               </div>
             </button>
           </form>
         @endforeach
       </div>
-
-      {{-- kalau GM belum pilih PT, stop sampai sini --}}
-      @if(!$activeCompanyId)
-        <div class="mt-5 rounded-xl bg-slate-50 text-slate-700 px-4 py-3 text-sm border border-slate-200">
-          ⚠️ Pilih perusahaan dulu ya, baru daftar site akan muncul.
-        </div>
-      @endif
-
-    @else
-      {{-- Non-GM: tampil PT terkunci --}}
-      <div class="rounded-2xl bg-white shadow ring-1 ring-slate-200 p-5">
-        <div class="text-xs uppercase tracking-wide text-slate-500">Perusahaan Aktif</div>
-        <div class="mt-1 text-lg font-semibold text-slate-900">
-          {{ $companyLabel }}
-        </div>
-        <div class="mt-2 text-sm text-slate-600">
-          Perusahaan terkunci sesuai akses akun Anda. Hubungi GM bila perlu perubahan.
-        </div>
-      </div>
-    @endif
-  </div>
-@endif
-
-{{-- =========================
-     SITE SECTION
-========================= --}}
-@if($isGM)
-  {{-- Site muncul hanya kalau PT aktif --}}
-  @if($activeCompanyId)
-
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-sm font-bold text-slate-800">📍 Pilih Site — {{ $activeCompany->code ?? '' }}</div>
-      <div class="text-xs text-slate-500">Total site: {{ $sitesCol->count() }}</div>
-    </div>
-
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      @forelse($sitesCol as $s)
-        <a href="{{ route('powerbi.site.reports', $s) }}"
-           class="group block rounded-2xl bg-white shadow-md ring-1 ring-slate-200 hover:shadow-lg hover:-translate-y-1 transition p-5">
-          <div class="flex items-center justify-between mb-3">
-            <div class="h-11 w-11 rounded-xl bg-gradient-to-br from-maroon-700 to-maroon-600 text-white/90 grid place-items-center shadow-inner">
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-width="2" d="M12 21v-7m0 0a5 5 0 1 0-5-5m5 5a5 5 0 0 1 5-5"/>
-              </svg>
-            </div>
-            <span class="text-[10px] font-mono text-slate-400">#{{ Str::substr($s->id,0,6) }}</span>
-          </div>
-
-          <h2 class="text-lg font-semibold text-slate-900 group-hover:text-maroon-700 transition">
-            {{ $s->code }}
-          </h2>
-          <p class="text-sm text-slate-600 line-clamp-2">{{ $s->name }}</p>
-
-          <div class="mt-4 flex items-center gap-2 text-[11px]">
-            @if($s->region)
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200">
-                📍 {{ $s->region }}
-              </span>
-            @endif
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">
-              🏭 {{ $activeCompany->code ?? 'PT' }}
-            </span>
-          </div>
-
-          <div class="mt-3 text-xs text-slate-500">Klik untuk lihat dashboard site ini</div>
-        </a>
-      @empty
-        <div class="col-span-full">
-          <div class="rounded-xl bg-slate-50 text-slate-800 px-4 py-3 text-sm border border-slate-200">
-            ⚠️ Belum ada site terdaftar untuk PT ini.
-          </div>
-        </div>
-      @endforelse
-    </div>
-
+    </section>
   @endif
 
-@else
-  {{-- Non-GM: tampil list site sesuai PT aktif --}}
-  @if($sitesCol->count() > 1)
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      @foreach($sitesCol as $s)
-        <a href="{{ route('powerbi.site.reports', $s) }}"
-           class="group block rounded-2xl bg-white shadow-md ring-1 ring-slate-200 hover:shadow-lg hover:-translate-y-1 transition p-5">
-          <div class="flex items-center justify-between mb-3">
-            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-maroon-700 to-maroon-600 text-white/90 grid place-items-center shadow-inner">
-              📍
-            </div>
-            <span class="text-[10px] font-mono text-slate-400">#{{ Str::substr($s->id,0,6) }}</span>
-          </div>
-
-          <h2 class="text-lg font-semibold text-slate-900 group-hover:text-maroon-700 transition">
-            {{ $s->code }}
-          </h2>
-          <p class="text-sm text-slate-600 line-clamp-2">{{ $s->name }}</p>
-
-          <div class="mt-3 text-xs text-slate-500">Klik untuk buka dashboard</div>
-        </a>
-      @endforeach
-    </div>
-
-  @elseif($activeSite)
-    {{-- kalau cuma 1 (default) --}}
-    <div class="rounded-2xl bg-white shadow ring-1 ring-slate-200 p-6">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div class="text-xs uppercase tracking-wide text-slate-500">Site Aktif</div>
-          <h2 class="mt-1 text-xl font-semibold text-slate-900">
-            {{ $activeSite->code }} — {{ $activeSite->name }}
-          </h2>
-          <div class="mt-2 flex flex-wrap items-center gap-2">
-            @if($activeSite->region)
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200 text-xs">
-                📍 {{ $activeSite->region }}
-              </span>
-            @endif
-            @if($activeCompany)
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200 text-xs">
-                🏭 {{ $activeCompany->code }}
-              </span>
-            @endif
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200 text-xs">
-              🔒 Locked to your account
-            </span>
-          </div>
-          <p class="mt-2 text-sm text-slate-600">
-            Anda terkunci pada site ini. Hubungi GM bila perlu perubahan.
-          </p>
-        </div>
-
-        <a href="{{ route('powerbi.site.reports', $activeSite) }}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-maroon-700 text-white font-semibold hover:bg-maroon-800 shadow ring-1 ring-maroon-900/20">
-          Buka Dashboard
-        </a>
-      </div>
+  @if($isContextChooser && !$activeCompanyId)
+    <div class="rounded-xl border border-maroon-200 bg-white px-4 py-3 text-sm text-maroon-800">
+      Pilih perusahaan dulu supaya daftar site yang muncul tidak campur.
     </div>
   @else
-    <div class="rounded-xl bg-slate-50 text-slate-800 px-4 py-3 text-sm border border-slate-200">
-      ⚠️ Anda belum memiliki site default. Hubungi GM untuk menetapkannya.
-    </div>
+    <section class="space-y-3">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-sm font-bold text-slate-800">{{ $isContextChooser ? '2.' : '1.' }} Pilih site</h2>
+        <span class="text-xs text-slate-500">{{ $sitesCol->count() }} site tersedia</span>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        @forelse($sitesCol as $s)
+          <a href="{{ route('powerbi.site.reports', $s) }}"
+             class="group block min-h-32 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-maroon-400 hover:shadow-md transition p-4 {{ $activeSite?->id === $s->id ? 'ring-2 ring-maroon-700 bg-maroon-50' : '' }}">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-lg font-bold text-slate-900 group-hover:text-maroon-700">{{ $s->code }}</div>
+                <div class="mt-1 text-sm text-slate-600 line-clamp-2">{{ $s->name }}</div>
+              </div>
+              <span class="text-[10px] text-slate-400">#{{ Str::substr($s->id, 0, 6) }}</span>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
+              @if(!empty($s->region))
+                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700 ring-1 ring-slate-200">{{ $s->region }}</span>
+              @endif
+              <span class="rounded-full bg-maroon-50 px-2 py-0.5 text-maroon-800 ring-1 ring-maroon-100">
+                Buka report
+              </span>
+            </div>
+          </a>
+        @empty
+          <div class="col-span-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            Belum ada site yang bisa dibuka untuk context ini.
+          </div>
+        @endforelse
+      </div>
+    </section>
   @endif
-@endif
+</div>
 @endsection

@@ -9,10 +9,11 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
     :root{
-      --maroon-900:#3f0f14; --maroon-800:#5a171f; --maroon-700:#7a1e29;
-      --maroon-600:#992635; --maroon-500:#b92e41;
+      --maroon-900:#BD9B75; --maroon-800:#BD9B75; --maroon-700:#BD9B75;
+      --maroon-600:#BD9B75; --maroon-500:#BD9B75;
     }
   </style>
+  @include('partials.two-tone-theme')
 </head>
 <body class="min-h-screen bg-white text-slate-800">
   <div class="relative flex min-h-screen flex-col lg:flex-row overflow-hidden">

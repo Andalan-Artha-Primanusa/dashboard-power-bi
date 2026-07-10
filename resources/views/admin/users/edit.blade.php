@@ -58,7 +58,7 @@
   @if (session()->has('generated_password'))
     <div class="px-6 pt-2">
       <div x-data="{open:true, copied:false}" x-show="open" x-transition
-           class="relative mb-4 overflow-hidden rounded-2xl bg-white ring-1 ring-[#f6c74d] shadow-[inset_0_0_0_1px_#f6c74d]">
+           class="relative mb-4 overflow-hidden rounded-2xl bg-white ring-1 ring-[#BD9B75] shadow-[inset_0_0_0_1px_#BD9B75]">
         <div class="bg-gradient-to-r from-maroon-700 via-maroon-600 to-yellow-600 px-4 py-2 text-white text-xs font-semibold tracking-wide">
           🔐 Password Baru — tampil sekali, segera salin
         </div>

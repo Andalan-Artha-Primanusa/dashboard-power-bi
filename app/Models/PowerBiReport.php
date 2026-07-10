@@ -88,12 +88,17 @@ class PowerBiReport extends Model
             return $q->whereRaw('1=0');
         }
 
-        // Ambil site aktif: SiteContext::currentId() -> session('active_site_id') -> $u->site_id
+        // Ambil site aktif dari context yang dipakai UI.
+        // App menyimpan site aktif di session('site_id') dan default user di default_site_id.
         $activeSiteId = null;
         if (class_exists(\App\Support\SiteContext::class) && method_exists(\App\Support\SiteContext::class, 'currentId')) {
             $activeSiteId = \App\Support\SiteContext::currentId();
         }
-        $activeSiteId = $activeSiteId ?? session('active_site_id') ?? ($u->site_id ?? null);
+        $activeSiteId = $activeSiteId
+            ?? session('site_id')
+            ?? session('active_site_id')
+            ?? ($u->default_site_id ?? null)
+            ?? ($u->site_id ?? null);
 
         return $q->where(function ($w) use ($u, $activeSiteId, $globalIfNoGrant) {
             // direct user grant

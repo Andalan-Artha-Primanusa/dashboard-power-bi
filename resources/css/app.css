@@ -1,3 +1,86 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    --arca-brown: #BD9B75;
+    --arca-white: #fff;
+}
+
+html,
+body {
+    background: var(--arca-white);
+    color: var(--arca-brown);
+}
+
+[class*="bg-gradient"],
+[class*="bg-[radial-gradient"],
+[class*="bg-[linear-gradient"] {
+    background-image: none !important;
+    background-color: var(--arca-brown) !important;
+}
+
+[class*="bg-slate"],
+[class*="bg-gray"],
+[class*="bg-zinc"],
+[class*="bg-neutral"],
+[class*="bg-stone"],
+[class*="bg-red"],
+[class*="bg-orange"],
+[class*="bg-amber"],
+[class*="bg-yellow"],
+[class*="bg-lime"],
+[class*="bg-green"],
+[class*="bg-emerald"],
+[class*="bg-teal"],
+[class*="bg-cyan"],
+[class*="bg-sky"],
+[class*="bg-blue"],
+[class*="bg-indigo"],
+[class*="bg-violet"],
+[class*="bg-purple"],
+[class*="bg-fuchsia"],
+[class*="bg-pink"],
+[class*="bg-rose"],
+[class*="bg-white/"],
+.bg-white {
+    background-color: var(--arca-white) !important;
+}
+
+[class*="bg-maroon"],
+[class*="bg-black"],
+[class*="from-"],
+[class*="via-"],
+[class*="to-"] {
+    background-color: var(--arca-brown) !important;
+}
+
+[class*="text-slate"],
+[class*="text-gray"],
+[class*="text-red"],
+[class*="text-amber"],
+[class*="text-green"],
+[class*="text-emerald"],
+[class*="text-sky"],
+[class*="text-blue"],
+[class*="text-indigo"],
+[class*="text-rose"],
+[class*="text-maroon"],
+[class*="hover:text-"]:hover,
+[class*="focus:text-"]:focus,
+.text-black {
+    color: var(--arca-brown) !important;
+}
+
+.text-white,
+[class*="text-white"] {
+    color: var(--arca-white) !important;
+}
+
+[class*="border-"],
+[class*="ring-"],
+[class*="focus:ring-"]:focus,
+[class*="hover:ring-"]:hover {
+    border-color: var(--arca-brown) !important;
+    --tw-ring-color: var(--arca-brown) !important;
+}

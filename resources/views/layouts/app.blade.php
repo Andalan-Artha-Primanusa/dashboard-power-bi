@@ -11,22 +11,24 @@
     {{-- Tailwind CDN --}}
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // CONFIG TAILWIND: definisi warna maroon biar bg-maroon-800 dll hidup
+      // Brand dibatasi ke dua warna visual: putih dan tan.
+      const brandTan = '#BD9B75';
       tailwind.config = {
         theme: {
           extend: {
             colors: {
+              brand: brandTan,
               maroon: {
-                50:  '#fff5f5',
-                100: '#ffe3e3',
-                200: '#fecaca',
-                300: '#fca5a5',
-                400: '#f97373',
-                500: '#e53935',
-                600: '#c62828',
-                700: '#992024',
-                800: '#6b161c',
-                900: '#450910',
+                50:  brandTan,
+                100: brandTan,
+                200: brandTan,
+                300: brandTan,
+                400: brandTan,
+                500: brandTan,
+                600: brandTan,
+                700: brandTan,
+                800: brandTan,
+                900: brandTan,
               },
             },
           },
@@ -38,15 +40,67 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
+        :root { --arca-brand: #BD9B75; }
         [x-cloak] { display: none !important; }
+        body,
+        main,
+        .bg-slate-50,
+        .bg-maroon-50,
+        .bg-white\/90,
+        .bg-white\/95 {
+            background: #fff !important;
+        }
+        .bg-gradient-to-r,
+        .bg-gradient-to-br {
+            background-image: none !important;
+            background-color: var(--arca-brand) !important;
+        }
+        .text-slate-900,
+        .text-slate-800,
+        .text-slate-700,
+        .text-slate-600,
+        .text-slate-500,
+        .text-slate-400,
+        .text-maroon-900,
+        .text-maroon-800,
+        .text-maroon-700,
+        .text-amber-900 {
+            color: var(--arca-brand) !important;
+        }
+        .border-slate-200,
+        .border-amber-200,
+        .border-maroon-700,
+        .ring-slate-200,
+        .ring-maroon-100,
+        .ring-maroon-300,
+        .ring-maroon-400,
+        .ring-maroon-700,
+        .ring-maroon-900\/10 {
+            border-color: var(--arca-brand) !important;
+            --tw-ring-color: var(--arca-brand) !important;
+        }
+        .bg-maroon-600,
+        .bg-maroon-700,
+        .bg-maroon-800,
+        .bg-maroon-900,
+        .bg-maroon-700\/40,
+        .bg-maroon-700\/60,
+        .bg-maroon-900\/60,
+        .bg-maroon-900\/95,
+        .bg-amber-50,
+        .bg-slate-100,
+        .bg-slate-200 {
+            background: var(--arca-brand) !important;
+        }
         .sidebar-scroll::-webkit-scrollbar { width: 6px; }
         .sidebar-scroll::-webkit-scrollbar-thumb {
-            background: #a8ced2;
+            background: #fff;
             border-radius: 999px;
         }
     </style>
 
     @stack('head')
+    @include('partials.two-tone-theme')
 </head>
 
 @php
@@ -181,7 +235,7 @@
     $canSwitchSite = ($isGM || $isSuperAdmin) && $allowedSites->isNotEmpty();
 @endphp
 
-<body class="bg-[#edf3fb]"
+<body class="bg-white"
       x-data="{ sidebarExpanded: true }">
 
 <div class="min-h-screen flex">
@@ -233,7 +287,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                @if($activeSite)
+                @if(false && $activeSite)
                     <span class="hidden sm:inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-[11px] text-slate-600 bg-slate-50">
                         📍 {{ $activeSite->code }} — {{ $activeSite->name }}
                     </span>
@@ -253,7 +307,7 @@
         </header>
 
         {{-- CONTENT --}}
-        <main class="flex-1 overflow-y-auto bg-[#edf3fb]">
+        <main class="flex-1 overflow-y-auto bg-white">
             {{-- FULL WIDTH, nggak pakai max-w lagi --}}
             <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6">
                 @yield('content')
