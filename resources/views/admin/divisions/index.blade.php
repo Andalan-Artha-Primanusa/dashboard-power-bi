@@ -26,7 +26,7 @@
           <span>ARCA — Master Data</span>
         </div>
         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-          👥 Divisions
+           Divisions
         </h1>
         <p class="text-xs sm:text-sm text-white/80 max-w-xl">
           Kelola daftar divisi, kode, dan status yang dipakai di seluruh modul ARCA.
@@ -213,14 +213,14 @@
                     @if($isDeleted)
                       <form method="POST" action="{{ route('admin.divisions.restore',$d->id) }}">
                         @csrf
-                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700">♻️ Restore</button>
+                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700"> Restore</button>
                       </form>
                       <button type="button" @click="open=false; confirmDelete=true"
-                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Hapus Permanen</button>
+                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Hapus Permanen</button>
                     @else
-                      <a href="{{ route('admin.divisions.edit',$d) }}" class="block px-3 py-2 hover:bg-slate-50">✏️ Edit</a>
+                      <a href="{{ route('admin.divisions.edit',$d) }}" class="block px-3 py-2 hover:bg-slate-50"> Edit</a>
                       <button type="button" @click="open=false; confirmDelete=true"
-                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Delete</button>
+                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Delete</button>
                     @endif
                   </div>
                 </div>
@@ -365,14 +365,14 @@
                 @if($isDeleted)
                   <form method="POST" action="{{ route('admin.divisions.restore',$d->id) }}">
                     @csrf
-                    <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700">♻️ Restore</button>
+                    <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700"> Restore</button>
                   </form>
                   <button type="button" @click="open=false; confirmDelete=true"
-                          class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Hapus Permanen</button>
+                          class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Hapus Permanen</button>
                 @else
-                  <a href="{{ route('admin.divisions.edit',$d) }}" class="block px-3 py-2 hover:bg-slate-50">✏️ Edit</a>
+                  <a href="{{ route('admin.divisions.edit',$d) }}" class="block px-3 py-2 hover:bg-slate-50"> Edit</a>
                   <button type="button" @click="open=false; confirmDelete=true"
-                          class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Delete</button>
+                          class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Delete</button>
                 @endif
               </div>
             </div>

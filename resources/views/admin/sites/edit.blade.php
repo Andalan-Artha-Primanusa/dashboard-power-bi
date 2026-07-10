@@ -20,7 +20,7 @@
           <span>ARCA — Master Data</span>
         </div>
         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-          ✏️ Edit Site
+           Edit Site
         </h1>
         <p class="text-xs sm:text-sm text-white/80 max-w-xl">
           Perbarui informasi site / cabang yang sudah terdaftar di ARCA.
@@ -93,7 +93,7 @@
                 formnovalidate
                 onclick="return confirm('Pindahkan site ini ke trash?')"
                 class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 text-white text-sm font-semibold shadow hover:brightness-110">
-          🗑 Hapus
+           Hapus
         </button>
 
         <div class="flex items-center gap-2">

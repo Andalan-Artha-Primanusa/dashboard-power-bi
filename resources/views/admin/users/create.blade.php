@@ -34,7 +34,7 @@
           <span>ARCA — User Management</span>
         </div>
         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-          ➕ Tambah User
+           Tambah User
         </h1>
         <p class="text-xs sm:text-sm text-white/80 max-w-xl">
           Buat akun user baru untuk ERP BISA dan modul ARCA lainnya.
@@ -301,7 +301,7 @@
         </a>
         <button type="submit"
                 class="px-4 py-2 rounded-xl bg-maroon-700 text-white text-sm font-semibold hover:bg-maroon-800 shadow ring-1 ring-maroon-900/20">
-          💾 Simpan
+           Simpan
         </button>
       </div>
 

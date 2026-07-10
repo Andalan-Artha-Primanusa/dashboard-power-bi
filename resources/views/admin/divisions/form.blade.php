@@ -21,7 +21,7 @@
           <span>ARCA — Master Data</span>
         </div>
         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-          {{ $division->exists ? '✏️ Edit Divisi' : '➕ Tambah Divisi' }}
+          {{ $division->exists ? ' Edit Divisi' : ' Tambah Divisi' }}
         </h1>
         <p class="text-xs sm:text-sm text-white/80 max-w-xl">
           {{ $division->exists ? 'Perbarui informasi Divisi.' : 'Daftarkan Divisi baru untuk ERP BISA.' }}
@@ -125,7 +125,7 @@
         </a>
         <button type="submit"
                 class="px-4 py-2 rounded-xl bg-maroon-700 text-white text-sm font-semibold hover:bg-maroon-800 shadow ring-1 ring-maroon-900/20">
-          💾 Simpan
+           Simpan
         </button>
       </div>
     </div>

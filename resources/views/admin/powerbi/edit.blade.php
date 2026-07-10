@@ -26,7 +26,7 @@
           <span>ARCA — Power BI</span>
         </div>
         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-          ✏️ Edit Power BI Report
+           Edit Power BI Report
         </h1>
         <p class="text-xs sm:text-sm text-white/80 max-w-xl">
           Perbarui metadata laporan dan pengaturan hak akses embed.

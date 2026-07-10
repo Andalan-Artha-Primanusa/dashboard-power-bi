@@ -140,7 +140,7 @@
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100/80 p-6 sm:p-7 grid md:grid-cols-3 gap-6">
       {{-- User --}}
       <div>
-        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide">👤 Bagikan ke User</h3>
+        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide"> Bagikan ke User</h3>
         <div class="max-h-64 overflow-auto space-y-1 pr-1">
           @foreach($users as $u)
             <label class="flex items-center gap-2 text-sm text-slate-700">
@@ -159,7 +159,7 @@
 
       {{-- Divisi --}}
       <div>
-        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide">🏢 Bagikan ke Divisi</h3>
+        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide"> Bagikan ke Divisi</h3>
         <div class="max-h-64 overflow-auto space-y-1 pr-1">
           @foreach($divisions as $d)
             <label class="flex items-center gap-2 text-sm text-slate-700">
@@ -177,7 +177,7 @@
 
       {{-- Site --}}
       <div>
-        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide">📍 Bagikan ke Site</h3>
+        <h3 class="font-semibold text-slate-800 mb-2 text-sm uppercase tracking-wide"> Bagikan ke Site</h3>
         <div class="max-h-64 overflow-auto space-y-1 pr-1">
           @foreach($sites as $s)
             <label class="flex items-center gap-2 text-sm text-slate-700">

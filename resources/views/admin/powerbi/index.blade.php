@@ -199,16 +199,16 @@
               <td class="px-4 py-3 align-top">
                 <div class="flex flex-wrap gap-2">
                   @if($uCount>0)
-                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">👤 Users: {{ $uCount }}</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200"> Users: {{ $uCount }}</span>
                   @endif
                   @if($dCount>0)
-                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">🏢 Divs: {{ $dCount }}</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200"> Divs: {{ $dCount }}</span>
                   @endif
                   @if($sCount>0)
-                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">📍 Sites: {{ $sCount }}</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200"> Sites: {{ $sCount }}</span>
                   @endif
                   @if($isGlobal)
-                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200">🌐 Global</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200"> Global</span>
                   @endif
                 </div>
               </td>
@@ -244,15 +244,15 @@
                     @if($isDeleted)
                       <form method="POST" action="{{ route('admin.powerbi.restore',$r->id) }}">
                         @csrf
-                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700">♻️ Restore</button>
+                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700"> Restore</button>
                       </form>
                       <button type="button" @click="open=false; confirmDelete=true"
-                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Hapus Permanen</button>
+                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Hapus Permanen</button>
                     @else
-                      <a href="{{ route('admin.powerbi.edit',$r) }}" class="block px-3 py-2 hover:bg-slate-50">✏️ Edit</a>
-                      <a href="{{ $r->embed_url }}" target="_blank" class="block px-3 py-2 hover:bg-slate-50 text-maroon-700">🔗 Open Embed</a>
+                      <a href="{{ route('admin.powerbi.edit',$r) }}" class="block px-3 py-2 hover:bg-slate-50"> Edit</a>
+                      <a href="{{ $r->embed_url }}" target="_blank" class="block px-3 py-2 hover:bg-slate-50 text-maroon-700"> Open Embed</a>
                       <button type="button" @click="open=false; confirmDelete=true"
-                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Delete</button>
+                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Delete</button>
                     @endif
                   </div>
                 </div>
@@ -382,16 +382,16 @@
 
               <div class="mt-1 flex flex-wrap gap-1.5">
                 @if($uCount>0)
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">👤 {{ $uCount }}</span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200"> {{ $uCount }}</span>
                 @endif
                 @if($dCount>0)
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">🏢 {{ $dCount }}</span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200"> {{ $dCount }}</span>
                 @endif
                 @if($sCount>0)
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200">📍 {{ $sCount }}</span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200"> {{ $sCount }}</span>
                 @endif
                 @if($isGlobal)
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200">🌐 Global</span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-maroon-900 ring-1 ring-slate-200"> Global</span>
                 @endif
               </div>
 
@@ -416,15 +416,15 @@
                 @if($isDeleted)
                   <form method="POST" action="{{ route('admin.powerbi.restore',$r->id) }}">
                     @csrf
-                    <button class="w-full text-left px-3 py-2 rounded-lg text-maroon-700 hover:bg-slate-50">♻️ Restore</button>
+                    <button class="w-full text-left px-3 py-2 rounded-lg text-maroon-700 hover:bg-slate-50"> Restore</button>
                   </form>
                   <button type="button" @click="open=false; confirmDelete=true"
-                          class="w-full text-left px-3 py-2 rounded-lg text-rose-700 hover:bg-slate-50">🗑 Hapus Permanen</button>
+                          class="w-full text-left px-3 py-2 rounded-lg text-rose-700 hover:bg-slate-50"> Hapus Permanen</button>
                 @else
-                  <a href="{{ route('admin.powerbi.edit',$r) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-50">✏️ Edit</a>
-                  <a href="{{ $r->embed_url }}" target="_blank" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-maroon-700">🔗 Open Embed</a>
+                  <a href="{{ route('admin.powerbi.edit',$r) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-50"> Edit</a>
+                  <a href="{{ $r->embed_url }}" target="_blank" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-maroon-700"> Open Embed</a>
                   <button type="button" @click="open=false; confirmDelete=true"
-                          class="w-full text-left px-3 py-2 rounded-lg text-rose-700 hover:bg-slate-50">🗑 Delete</button>
+                          class="w-full text-left px-3 py-2 rounded-lg text-rose-700 hover:bg-slate-50"> Delete</button>
                 @endif
               </div>
             </div>

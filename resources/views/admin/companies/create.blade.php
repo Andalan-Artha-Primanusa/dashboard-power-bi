@@ -19,7 +19,7 @@
           <span>ARCA — Master Data</span>
         </div>
         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-          🏢 Create Company
+           Create Company
         </h1>
         <p class="text-xs sm:text-sm text-white/80 max-w-xl">
           Tambah perusahaan baru sebagai dasar multi–company di ARCA.

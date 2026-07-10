@@ -114,7 +114,7 @@
           <select name="company_id"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm
                          focus:border-maroon-700 focus:ring-2 focus:ring-maroon-700/80">
-            <option value="">🏭 Semua Perusahaan</option>
+            <option value=""> Semua Perusahaan</option>
             @foreach($companies as $c)
               <option value="{{ $c->id }}" @selected($companyId==$c->id)>
                 {{ $c->code }} — {{ $c->name }}
@@ -189,7 +189,7 @@
                 @php $comp = $s->company ?? null; @endphp
                 @if($comp)
                   <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200 text-[11px] font-semibold">
-                    🏭 {{ $comp->code }}
+                     {{ $comp->code }}
                   </span>
                   <div class="text-xs text-slate-500 mt-0.5 line-clamp-1">{{ $comp->name }}</div>
                 @else
@@ -227,18 +227,18 @@
                     @if(method_exists($s,'trashed') && $s->trashed())
                       <form method="POST" action="{{ route('admin.sites.restore',$s->id) }}">
                         @csrf
-                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700">♻️ Restore</button>
+                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700"> Restore</button>
                       </form>
                       <button type="button" @click="open=false; confirmDelete=true"
-                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Hapus Permanen</button>
+                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Hapus Permanen</button>
                     @else
-                      <a href="{{ route('admin.sites.edit',$s) }}" class="block px-3 py-2 hover:bg-slate-50">✏️ Edit</a>
+                      <a href="{{ route('admin.sites.edit',$s) }}" class="block px-3 py-2 hover:bg-slate-50"> Edit</a>
                       <form method="POST" action="{{ route('admin.sites.toggle',$s) }}">
                         @csrf @method('PATCH')
-                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50">🔁 Toggle Active</button>
+                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50"> Toggle Active</button>
                       </form>
                       <button type="button" @click="open=false; confirmDelete=true"
-                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Delete</button>
+                              class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Delete</button>
                     @endif
                   </div>
                 </div>
@@ -357,7 +357,7 @@
               @if($comp)
                 <div class="mt-1">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200 text-[11px] font-semibold">
-                    🏭 {{ $comp->code }} — {{ $comp->name }}
+                     {{ $comp->code }} — {{ $comp->name }}
                   </span>
                 </div>
               @endif
@@ -385,18 +385,18 @@
                 @if(method_exists($s,'trashed') && $s->trashed())
                   <form method="POST" action="{{ route('admin.sites.restore',$s->id) }}">
                     @csrf
-                    <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700">♻️ Restore</button>
+                    <button class="w-full text-left px-3 py-2 hover:bg-slate-50 text-maroon-700"> Restore</button>
                   </form>
                   <button type="button" @click="open=false; confirmDelete=true"
-                          class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Hapus Permanen</button>
+                          class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Hapus Permanen</button>
                 @else
-                  <a href="{{ route('admin.sites.edit',$s) }}" class="block px-3 py-2 hover:bg-slate-50">✏️ Edit</a>
+                  <a href="{{ route('admin.sites.edit',$s) }}" class="block px-3 py-2 hover:bg-slate-50"> Edit</a>
                   <form method="POST" action="{{ route('admin.sites.toggle',$s) }}">
                     @csrf @method('PATCH')
-                    <button class="w-full text-left px-3 py-2 hover:bg-slate-50">🔁 Toggle Active</button>
+                    <button class="w-full text-left px-3 py-2 hover:bg-slate-50"> Toggle Active</button>
                   </form>
                   <button type="button" @click="open=false; confirmDelete=true"
-                          class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600">🗑 Delete</button>
+                          class="w-full text-left px-3 py-2 hover:bg-slate-50 text-rose-600"> Delete</button>
                 @endif
               </div>
             </div>

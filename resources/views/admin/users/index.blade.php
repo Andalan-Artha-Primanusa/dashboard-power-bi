@@ -70,7 +70,7 @@
     <div x-data="{open:true, copied:false}" x-show="open" x-transition
          class="relative overflow-hidden rounded-2xl bg-white ring-1 ring-maroon-200 shadow-[inset_0_0_0_1px_rgba(128,0,32,0.15)]">
       <div class="bg-gradient-to-r from-maroon-800 via-maroon-700 to-maroon-600 px-4 py-2 text-white text-xs font-semibold tracking-wide">
-        🔐 Password Baru — tampil sekali, segera salin
+         Password Baru — tampil sekali, segera salin
       </div>
       <div class="p-4 flex items-start gap-3">
         <svg class="h-5 w-5 text-maroon-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -331,11 +331,11 @@
 
                 <div x-cloak x-show="open" @click.outside="open=false"
                      class="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-slate-200 bg-white shadow-lg p-1 text-sm">
-                  <a href="{{ route('admin.users.edit',$u) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-50">✏️ Edit</a>
+                  <a href="{{ route('admin.users.edit',$u) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-50"> Edit</a>
                   <button type="button" @click="open=false; confirmReset=true"
-                          class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 text-maroon-700">🔐 Reset Password</button>
+                          class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 text-maroon-700"> Reset Password</button>
                   <button type="button" @click="open=false; confirmDelete=true"
-                          class="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 text-rose-700">🗑️ Delete</button>
+                          class="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 text-rose-700"> Delete</button>
                 </div>
               </div>
 
@@ -425,14 +425,14 @@
 
             <div class="text-right space-y-2 shrink-0">
               <a href="{{ route('admin.users.edit',$u) }}"
-                 class="block px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium">✏️ Edit</a>
+                 class="block px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium"> Edit</a>
               <button type="button" @click="confirmReset=true"
                       class="w-full px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium">
-                🔐 Reset
+                 Reset
               </button>
               <button type="button" @click="confirmDelete=true"
                       class="w-full px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-500 text-xs font-medium">
-                🗑️ Delete
+                 Delete
               </button>
             </div>
           </div>

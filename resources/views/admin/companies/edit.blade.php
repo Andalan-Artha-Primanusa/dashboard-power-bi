@@ -19,7 +19,7 @@
           <span>ARCA — Master Data</span>
         </div>
         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-          🏢 Edit Company
+           Edit Company
         </h1>
         <p class="text-xs sm:text-sm text-white/80 max-w-xl">
           Update data perusahaan yang sudah terdaftar di ARCA.

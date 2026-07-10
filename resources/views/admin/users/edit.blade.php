@@ -40,7 +40,7 @@
     <div class="absolute -top-16 -right-16 size-64 rounded-full bg-white/10 blur-3xl"></div>
 
     <div class="relative">
-      <h1 class="text-2xl font-bold tracking-tight">✏️ Edit User</h1>
+      <h1 class="text-2xl font-bold tracking-tight"> Edit User</h1>
       <p class="text-sm text-white/85 mt-1">{{ $user->name }} — {{ $user->email }}</p>
     </div>
   </div>
@@ -60,7 +60,7 @@
       <div x-data="{open:true, copied:false}" x-show="open" x-transition
            class="relative mb-4 overflow-hidden rounded-2xl bg-white ring-1 ring-[#BD9B75] shadow-[inset_0_0_0_1px_#BD9B75]">
         <div class="bg-gradient-to-r from-maroon-700 via-maroon-600 to-yellow-600 px-4 py-2 text-white text-xs font-semibold tracking-wide">
-          🔐 Password Baru — tampil sekali, segera salin
+           Password Baru — tampil sekali, segera salin
         </div>
         <div class="p-4 flex items-start gap-3">
           <svg class="h-5 w-5 text-yellow-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -144,7 +144,7 @@
             @method('DELETE')
             <button type="submit"
                     class="px-3 py-2 rounded-xl bg-rose-600 text-white text-xs font-semibold hover:bg-rose-500">
-              🗑️ Hapus
+               Hapus
             </button>
           </form>
         @endif
@@ -282,7 +282,7 @@
       </a>
       <button type="submit"
               class="px-4 py-2 rounded-xl bg-maroon-700 text-white font-semibold hover:bg-maroon-800 ring-1 ring-maroon-900/20">
-        💾 Simpan Perubahan
+         Simpan Perubahan
       </button>
     </div>
   </form>
@@ -293,7 +293,7 @@
       @csrf
       <button type="submit"
               class="w-full px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-500">
-        🔐 Reset Password (Generate)
+         Reset Password (Generate)
       </button>
     </form>
   </div>

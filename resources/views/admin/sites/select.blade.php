@@ -9,7 +9,7 @@
   {{-- Header --}}
   <div class="rounded-2xl overflow-hidden shadow ring-1 ring-slate-200">
     <div class="px-6 py-6 bg-gradient-to-r from-emerald-600 via-[--teal] to-[--navy]">
-      <h1 class="text-2xl font-bold text-white">🌐 Pilih Site Aktif</h1>
+      <h1 class="text-2xl font-bold text-white"> Pilih Site Aktif</h1>
       <p class="text-white/80 text-sm mt-1">Semua data & dashboard akan mengikuti site aktif ini.</p>
     </div>
   </div>
