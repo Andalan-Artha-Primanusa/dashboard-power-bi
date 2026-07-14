@@ -86,16 +86,18 @@ class User extends Authenticatable
     public function accessibleSites()
     {
         $viaPivot = $this->sites()->pluck('sites.id')->all();
-        if (!empty($viaPivot)) {
-            return Site::whereIn('id', $viaPivot)->get();
-        }
+        $viaJson  = array_filter(Arr::wrap($this->allowed_site_ids));
+        $default  = $this->default_site_id ? [$this->default_site_id] : [];
 
-        $ids = array_filter(Arr::wrap($this->allowed_site_ids));
-        if (!empty($ids)) {
-            return Site::whereIn('id', $ids)->get();
-        }
+        $ids = collect(array_merge($viaPivot, $viaJson, $default))
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values();
 
-        return $this->defaultSite ? Site::whereKey($this->default_site_id)->get() : collect();
+        return $ids->isEmpty()
+            ? collect()
+            : Site::whereIn('id', $ids)->orderBy('code')->get();
     }
 
     public function canAccessSite($siteOrId): bool
