@@ -11,6 +11,7 @@
   $companies = $companies ?? collect();
   $divisions = $divisions ?? collect();
   $sites     = $sites ?? collect();
+  $selectedCompanyId = old('default_company_id', $companyId ?? $user->default_company_id);
 
   // old values / current
   $oldSiteIds = old('site_ids',
@@ -168,13 +169,28 @@
       </div>
 
       {{-- Default Company --}}
-      <div>
+      <div
+        x-data="{
+          cid: '{{ $selectedCompanyId }}',
+          changeCompany(){
+            const url = new URL(window.location.href);
+            if(this.cid){
+              url.searchParams.set('company_id', this.cid);
+            } else {
+              url.searchParams.delete('company_id');
+            }
+            window.location.href = url.toString();
+          }
+        }"
+      >
         <label class="block text-sm font-semibold text-slate-700">Perusahaan (Default)</label>
         <select name="default_company_id"
+                x-model="cid"
+                @change="changeCompany()"
                 class="mt-1 block w-full rounded-lg border border-slate-300 focus:ring-maroon-700 focus:border-maroon-700">
           <option value="">— Pilih Perusahaan —</option>
           @foreach($companies as $c)
-            <option value="{{ $c->id }}" @selected(old('default_company_id', $user->default_company_id) == $c->id)>
+            <option value="{{ $c->id }}">
               {{ $c->code ?? 'COMP' }} — {{ $c->name }}
             </option>
           @endforeach

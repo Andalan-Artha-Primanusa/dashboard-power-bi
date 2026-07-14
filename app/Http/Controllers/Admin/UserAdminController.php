@@ -201,11 +201,12 @@ class UserAdminController extends Controller
     /**
      * FORM EDIT USER
      */
-    public function edit(User $user)
+    public function edit(Request $request, User $user)
     {
-        $companyId = session('company_id');
-
         $user->load(['division','defaultSite','defaultCompany','sites']);
+        $companyId = $request->query('company_id')
+            ?: ($user->default_company_id ?? null)
+            ?: session('company_id');
 
         $companies = Company::query()
             ->where('is_active', true)
@@ -225,10 +226,25 @@ class UserAdminController extends Controller
             ->orderBy('name')
             ->get(['id','name']);
 
+        $selectedSiteIds = collect($user->sites?->pluck('id')->all() ?? [])
+            ->merge($user->allowed_site_ids ?? [])
+            ->merge($user->default_site_id ? [$user->default_site_id] : [])
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+
         $sites = Site::query()
             ->when(
                 $companyId && Schema::hasColumn('sites','company_id'),
-                fn($qb) => $qb->where('company_id', $companyId)
+                fn($qb) => $qb->where(function ($w) use ($companyId, $selectedSiteIds) {
+                    $w->where('company_id', $companyId);
+
+                    if (!empty($selectedSiteIds)) {
+                        $w->orWhereIn('id', $selectedSiteIds);
+                    }
+                })
             )
             ->orderBy('code')
             ->get(['id','code','name','region']);
